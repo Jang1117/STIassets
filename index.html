@@ -345,17 +345,19 @@
                             scaledSize: new google.maps.Size(40, 40)
                         }
                     });
-
+                
                     marker.addListener("click", () => {
+                        // imageUrl이 있는 경우에만 이미지 태그 추가
+                        const imageTag = asset.imageUrl ? `<img src="${asset.imageUrl}" alt="${asset.title}" class="asset-image">` : '';
                         showPopup(asset.title, asset.title, asset.description, `
                             <p class="established-date">투자/설립시기: ${asset.establishedDate || '정보 없음'}</p>
                             <!-- <img src="${asset.logoUrl}" alt="Logo" class="logo"> -->
-                            <img src="${asset.imageUrl}" alt="${asset.title}" class="asset-image">
+                            ${imageTag}
                         `, asset);
                         map.setZoom(17);
                         map.setCenter(asset.position);
                     });
-
+                
                     markers.push(marker);
                 });
             }
