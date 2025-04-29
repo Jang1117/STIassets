@@ -200,6 +200,22 @@
         let selectedCategory = "";
         let selectedCountry = "";
 
+        // 자산군별 중심좌표 (사용자가 직접 설정 가능)
+        const categoryCenters = {
+            "신재생에너지": { lat: 23.82266303, lng: 14.03373931 },
+            "자원/에너지인프라": { lat: 1.759929624, lng: 107.5170635 },
+            "금융/대체투자": { lat: 0, lng: 0 },
+            "부동산 자산관리": { lat: 12.40207596, lng: -1.176507807 }
+        };
+
+        const categoryZooms = {
+            "신재생에너지": 3,
+            "자원/에너지인프라": 5,
+            "금융/대체투자": 4,
+            "부동산 자산관리": 3
+        };
+        map.setZoom(categoryZooms[selectedCategory] || 5);
+        
         // 지도 초기화 함수
         function initMap() {
             if (typeof assets === "undefined") {
@@ -230,8 +246,8 @@
             });
 
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 3,
-                center: { lat: 21.340505639289695, lng: -162.85451775968681 },
+                zoom: 2,
+                center: { lat: 0, lng: 0 },
                 fullscreenControl: false,
                 mapTypeId: google.maps.MapTypeId.SATELLITE
             });
@@ -272,6 +288,10 @@
                 map.setZoom(2);
                 map.setCenter({ lat: 0, lng: 0 });
                 currentCountryAssets = null;
+            } else if (selectedCategory && categoryCenters[selectedCategory]) {
+                // 자산군별 중심좌표로 이동
+                map.setCenter(categoryCenters[selectedCategory]);
+                map.setZoom(5); // 고정된 줌 레벨 (필요 시 조정)
             } else if (currentCountryAssets) {
                 moveToAssets();
             } else {
@@ -474,9 +494,9 @@
             map.setZoom(2);
             map.setCenter({ lat: 0, lng: 0 });
             currentCountryAssets = null;
-            filteredAssets = assets; // 모든 자산 표시
+            filteredAssets = assets;
             document.getElementById("countryDropdown").value = "";
-            document.getElementById("categoryDropdown").value = ""; // 자산군 드랍다운 초기화
+            document.getElementById("categoryDropdown").value = "";
             selectedCountry = "";
             selectedCategory = "";
             updateMarkers();
