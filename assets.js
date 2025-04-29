@@ -74,7 +74,7 @@ const assets = [
         title: "APEX Clean Energy (APEX)",
         description: "APEX는 북미 탑티어 신재생 개발사로서 풍력, 태양광 및 ESS 등 신재생에너지 산업의 다양한 유망 영역 포트폴리오를 보유하고 있습니다. 국내 최대 PEF운용사 IMM과 상호보완적 파트너링을 기반으로 공동 투자를 하였으며 산업내 선도적 시장지위 확보 및 투자영역을 확대하고자 합니다.",
         logoUrl: "./images/invest05.jpg",
-        imageUrl: "",
+        imageUrl: "./images/new_05.jpg",
         country: "미국",
         establishedDate: "2021-11",
         category: "신재생에너지"
