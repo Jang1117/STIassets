@@ -286,5 +286,15 @@ const assets = [
         country: "미국",
         establishedDate: "1999-04",
         category: "부동산 자산관리"
+    },
+    {
+        position: { lat: 37.695403, lng:128.881682 },
+        title: "동해임산",
+        description: "동해임산은 부동산개발전문회사로서 강원도 강릉시 소재 약 32만평의 사업부지를 보유하고 있으며 골프장, 주거시설 및 상업시설 등을 복합개발하고 있습니다.",
+        logoUrl: "./images/h_logo.png",
+        //imageUrl: "",
+        country: "한국",
+        establishedDate: "2007-07",
+        category: "부동산 자산관리"
     }  
 ];
