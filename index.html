@@ -63,9 +63,9 @@
             font-size: 14px;
             cursor: pointer;
             z-index: 1000;
-            width: 120px; /* 고정된 가로 길이 */
-            box-sizing: border-box; /* padding 포함 */
-            text-align: center; /* 텍스트 중앙 정렬 */
+            width: 120px;
+            box-sizing: border-box;
+            text-align: center;
         }
         .global-button {
             top: 10px;
@@ -86,8 +86,9 @@
             font-size: 14px;
             z-index: 1000;
             background-color: #f0f0f0;
-            width: 120px; /* 고정된 가로 길이 */
-            box-sizing: border-box; /* padding 포함 */
+            width: 120px;
+            box-sizing: border-box;
+            text-align: center; /* 드랍다운 텍스트 가운데 정렬 */
         }
         #countryDropdown {
             top: 90px;
@@ -244,6 +245,7 @@
             updateMarkers();
         }
 
+        // 자산군 필터링 함수
         function filterByCategory() {
             const categoryDropdown = document.getElementById("categoryDropdown");
             selectedCategory = categoryDropdown.value;
@@ -263,7 +265,13 @@
                 currentCountryAssets = null;
             }
 
-            if (currentCountryAssets) {
+            // 조건에 맞는 자산이 없는 경우
+            if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
+                alert("해당 자산이 없습니다.");
+                map.setZoom(2);
+                map.setCenter({ lat: 0, lng: 0 });
+                currentCountryAssets = null;
+            } else if (currentCountryAssets) {
                 moveToAssets();
             } else {
                 map.setZoom(2);
@@ -273,6 +281,7 @@
             updateMarkers();
         }
 
+        // 마커 업데이트 함수
         function updateMarkers() {
             markers.forEach(marker => marker.setMap(null));
             markers = [];
@@ -351,6 +360,7 @@
             }
         }
 
+        // 팝업 창 표시 함수
         function showPopup(id, title, description, extraContent, asset = null) {
             const popupOverlay = document.getElementById("popupOverlay");
             const popupTitle = document.getElementById("popupTitle");
@@ -374,12 +384,14 @@
             popupOverlay.style.display = "block";
         }
 
+        // 팝업 창 닫기 함수
         function closePopup() {
             const popupOverlay = document.getElementById("popupOverlay");
             popupOverlay.style.display = "none";
             currentCountryAssets = null;
         }
 
+        // 자산으로 이동 함수
         function moveToAssets() {
             if (currentCountryAssets) {
                 const bounds = new google.maps.LatLngBounds();
@@ -394,19 +406,35 @@
             }
         }
 
+        // 자산 이동 래퍼 함수
         function moveToAssetsWrapper(country) {
             currentCountryAssets = assetsByCountry[country].filter(asset => !selectedCategory || asset.category === selectedCategory);
-            moveToAssets();
+            if (currentCountryAssets.length === 0) {
+                alert("해당 자산이 없습니다.");
+                map.setZoom(2);
+                map.setCenter({ lat: 0, lng: 0 });
+                currentCountryAssets = null;
+            } else {
+                moveToAssets();
+            }
             closePopup();
         }
 
+        // 드랍다운에서 국가 선택 시 이동 함수
         function moveToCountry() {
             const countryDropdown = document.getElementById("countryDropdown");
             const selectedCountry = countryDropdown.value;
             if (selectedCountry && assetsByCountry[selectedCountry]) {
                 currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
                 filteredAssets = assets.filter(asset => asset.country === selectedCountry && (!selectedCategory || asset.category === selectedCategory));
-                moveToAssets();
+                if (filteredAssets.length === 0) {
+                    alert("해당 자산이 없습니다.");
+                    map.setZoom(2);
+                    map.setCenter({ lat: 0, lng: 0 });
+                    currentCountryAssets = null;
+                } else {
+                    moveToAssets();
+                }
                 countryDropdown.value = "";
             } else {
                 currentCountryAssets = null;
@@ -417,13 +445,21 @@
             updateMarkers();
         }
 
+        // Local 버튼 클릭 시 마지막으로 확인한 자산의 국가로 이동
         function moveToLocal() {
             if (lastViewedAsset && lastViewedAsset.country) {
                 const country = lastViewedAsset.country;
                 if (assetsByCountry[country]) {
                     currentCountryAssets = assetsByCountry[country].filter(asset => !selectedCategory || asset.category === selectedCategory);
                     filteredAssets = assets.filter(asset => asset.country === country && (!selectedCategory || asset.category === selectedCategory));
-                    moveToAssets();
+                    if (filteredAssets.length === 0) {
+                        alert("해당 자산이 없습니다.");
+                        map.setZoom(2);
+                        map.setCenter({ lat: 0, lng: 0 });
+                        currentCountryAssets = null;
+                    } else {
+                        moveToAssets();
+                    }
                 } else {
                     alert(`마지막으로 확인한 자산의 국가 (${country})에 해당하는 자산이 없습니다.`);
                 }
@@ -432,6 +468,7 @@
             }
         }
 
+        // Global 버튼 클릭 시 지도 초기 상태로 복원
         function resetMap() {
             map.setZoom(2);
             map.setCenter({ lat: 0, lng: 0 });
