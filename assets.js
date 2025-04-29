@@ -262,7 +262,7 @@ const assets = [
         title: "블루코너",
         description: "블루코너는 중소기업창업투자회사로서 급변하는 투자환경에 대응하고 미래 성장동력 확보를 위해 설립하였습니다. 국내·외 유수의 유망 스타트업/벤처기업들을 발굴하여 투자하는 벤처캐피탈로 ST인터내셔널의 기존 사업과 시너지 창출 및 신수종 사업 분야를 개척해 나가기 위한 신성장 투자 플랫폼입니다.",
         logoUrl: "./images/invest24.jpg",
-        imageUrl: "",
+        //imageUrl: "",
         country: "한국",
         establishedDate: "2022-03",
         category: "금융/대체투자"
@@ -272,7 +272,7 @@ const assets = [
         title: "블루코너캐피탈",
         description: "블루코너캐피탈은 기업금융과 신기술금융 등 다양한 금융사업을 영위하는 여신전문금융회사입니다. 금융투자사업을 통하여 ST인터내셔널의 전략실행 및 가치창출에 기여하는 캐피탈사를 지향하고 있습니다.",
         logoUrl: "./images/invest24.jpg",
-        imageUrl: "",
+        //imageUrl: "",
         country: "한국",
         establishedDate: "2024-10",
         category: "금융/대체투자"
@@ -282,7 +282,7 @@ const assets = [
         title: "STI USA",
         description: "STI USA는 미국의 캘리포니아에 위치한 오피스/물류센터 등 부동산 사업을 중점적으로 영위하고 있으며 향후 유망사업기회 발굴을 위한 전략적 지역 거점으로서 역할을 확대해 나갈 것입니다.",
         logoUrl: "./images/invest21.jpg",
-        imageUrl: "",
+        //imageUrl: "",
         country: "미국",
         establishedDate: "1999-04",
         category: "부동산 자산관리"
