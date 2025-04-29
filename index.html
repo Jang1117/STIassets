@@ -63,6 +63,9 @@
             font-size: 14px;
             cursor: pointer;
             z-index: 1000;
+            width: 120px; /* 고정된 가로 길이 */
+            box-sizing: border-box; /* padding 포함 */
+            text-align: center; /* 텍스트 중앙 정렬 */
         }
         .global-button {
             top: 10px;
@@ -83,12 +86,14 @@
             font-size: 14px;
             z-index: 1000;
             background-color: #f0f0f0;
+            width: 120px; /* 고정된 가로 길이 */
+            box-sizing: border-box; /* padding 포함 */
         }
         #countryDropdown {
             top: 90px;
         }
         #categoryDropdown {
-            top: 130px; /* 국가 드랍다운 아래에 위치 */
+            top: 130px;
         }
         #countryDropdown:focus, #categoryDropdown:focus {
             outline: none;
@@ -190,24 +195,21 @@
         let currentCountryAssets = null;
         let assetsByCountry = null;
         let lastViewedAsset = null;
-        let filteredAssets = assets; // 필터링된 자산 목록 (기본: 전체 자산)
-        let selectedCategory = ""; // 선택된 자산군
+        let filteredAssets = assets;
+        let selectedCategory = "";
 
         // 지도 초기화 함수
         function initMap() {
-            // assets 변수가 정의되었는지 확인
             if (typeof assets === "undefined") {
                 console.error("Error: 'assets' is not defined. Ensure assets.js is loaded correctly.");
                 return;
             }
 
-            // 커스텀 마커 아이콘
             const customMarkerIcon = {
                 url: './marker.png',
                 scaledSize: new google.maps.Size(40, 40)
             };
 
-            // 자산을 국가별로 그룹화
             assetsByCountry = assets.reduce((acc, asset) => {
                 const country = asset.country;
                 if (!acc[country]) {
@@ -217,7 +219,6 @@
                 return acc;
             }, {});
 
-            // 드랍다운 메뉴에 국가 목록 추가
             const countryDropdown = document.getElementById("countryDropdown");
             Object.keys(assetsByCountry).sort().forEach(country => {
                 const option = document.createElement("option");
@@ -226,7 +227,6 @@
                 countryDropdown.appendChild(option);
             });
 
-            // 지도 중심 설정 (전 세계)
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 2,
                 center: { lat: 0, lng: 0 },
@@ -234,32 +234,26 @@
                 mapTypeId: google.maps.MapTypeId.SATELLITE
             });
 
-            // 초기 줌 레벨 출력
             console.log(`Zoom level: ${map.getZoom()}`);
 
-            // 줌 레벨 변화 감지
             map.addListener("zoom_changed", () => {
                 console.log(`Zoom level: ${map.getZoom()}`);
                 updateMarkers();
             });
 
-            // 초기 마커 설정
             updateMarkers();
         }
 
-        // 자산군 필터링 함수
         function filterByCategory() {
             const categoryDropdown = document.getElementById("categoryDropdown");
             selectedCategory = categoryDropdown.value;
 
-            // 자산군 필터링
             if (selectedCategory) {
                 filteredAssets = assets.filter(asset => asset.category === selectedCategory);
             } else {
-                filteredAssets = assets; // 자산군 선택 해제 시 전체 자산 표시
+                filteredAssets = assets;
             }
 
-            // 국가 필터링이 적용되어 있다면 추가 필터링
             const countryDropdown = document.getElementById("countryDropdown");
             const selectedCountry = countryDropdown.value;
             if (selectedCountry) {
@@ -269,7 +263,6 @@
                 currentCountryAssets = null;
             }
 
-            // 지도 중심 및 줌 초기화
             if (currentCountryAssets) {
                 moveToAssets();
             } else {
@@ -280,22 +273,18 @@
             updateMarkers();
         }
 
-        // 마커 업데이트 함수
         function updateMarkers() {
-            // 기존 마커 제거
             markers.forEach(marker => marker.setMap(null));
             markers = [];
 
             const zoom = map.getZoom();
             let assetsToShow = filteredAssets;
 
-            // 국가별 필터링 적용
             if (currentCountryAssets) {
                 assetsToShow = currentCountryAssets;
             }
 
             if (zoom <= 3) {
-                // 줌 레벨 3 이하: 국가별 마커 표시
                 const filteredAssetsByCountry = assetsToShow.reduce((acc, asset) => {
                     const country = asset.country;
                     if (!acc[country]) {
@@ -307,7 +296,6 @@
 
                 Object.keys(filteredAssetsByCountry).forEach(country => {
                     const countryAssets = filteredAssetsByCountry[country];
-                    // 국가 중심점 계산 (자산 위치의 평균)
                     let latSum = 0, lngSum = 0;
                     countryAssets.forEach(asset => {
                         latSum += asset.position.lat;
@@ -329,7 +317,6 @@
                     });
 
                     marker.addListener("click", () => {
-                        // 팝업 창 표시
                         showPopup(country, `${country}: ${countryAssets.length}개 자산`, `이 국가에는 ${countryAssets.length}개의 자산이 있습니다.`, `
                             <button class="move-button" onclick="moveToAssetsWrapper('${country}')">자산 이동</button>
                         `);
@@ -338,7 +325,6 @@
                     markers.push(marker);
                 });
             } else {
-                // 줌 레벨 4 이상: 개별 자산 마커 표시
                 assetsToShow.forEach(asset => {
                     const marker = new google.maps.Marker({
                         position: asset.position,
@@ -351,13 +337,11 @@
                     });
 
                     marker.addListener("click", () => {
-                        // 팝업 창 표시 및 줌 조정 (asset 객체 전달)
                         showPopup(asset.title, asset.title, asset.description, `
                             <p class="established-date">투자/설립시기: ${asset.establishedDate || '정보 없음'}</p>
                             <!-- <img src="${asset.logoUrl}" alt="Logo" class="logo"> -->
                             <img src="${asset.imageUrl}" alt="${asset.title}" class="asset-image">
                         `, asset);
-                        // 줌 레벨 17로 설정 및 자산 위치 중심
                         map.setZoom(17);
                         map.setCenter(asset.position);
                     });
@@ -367,42 +351,35 @@
             }
         }
 
-        // 팝업 창 표시 함수 (공통)
         function showPopup(id, title, description, extraContent, asset = null) {
             const popupOverlay = document.getElementById("popupOverlay");
             const popupTitle = document.getElementById("popupTitle");
             const popupDescription = document.getElementById("popupDescription");
             const popupExtra = document.getElementById("popupExtra");
 
-            // 팝업 내용 설정
             popupTitle.textContent = title;
             popupDescription.textContent = description;
             popupExtra.innerHTML = extraContent;
 
-            // 마지막으로 확인한 자산 저장
             if (asset) {
                 lastViewedAsset = asset;
             }
 
-            // 국가 자산 데이터 저장 (국가별 마커 클릭 시)
             if (id in assetsByCountry) {
                 currentCountryAssets = assetsByCountry[id].filter(asset => !selectedCategory || asset.category === selectedCategory);
             } else {
                 currentCountryAssets = null;
             }
 
-            // 팝업 표시
             popupOverlay.style.display = "block";
         }
 
-        // 팝업 창 닫기 함수
         function closePopup() {
             const popupOverlay = document.getElementById("popupOverlay");
             popupOverlay.style.display = "none";
             currentCountryAssets = null;
         }
 
-        // 자산으로 이동 함수
         function moveToAssets() {
             if (currentCountryAssets) {
                 const bounds = new google.maps.LatLngBounds();
@@ -411,21 +388,18 @@
                 });
                 map.fitBounds(bounds);
 
-                // 줌 레벨 제한
                 const currentZoom = map.getZoom();
                 if (currentZoom > 10) map.setZoom(10);
                 if (currentZoom < 4) map.setZoom(4);
             }
         }
 
-        // 자산 이동 래퍼 함수 (팝업 창 버튼 클릭 시 호출)
         function moveToAssetsWrapper(country) {
             currentCountryAssets = assetsByCountry[country].filter(asset => !selectedCategory || asset.category === selectedCategory);
             moveToAssets();
             closePopup();
         }
 
-        // 드랍다운에서 국가 선택 시 이동 함수
         function moveToCountry() {
             const countryDropdown = document.getElementById("countryDropdown");
             const selectedCountry = countryDropdown.value;
@@ -443,7 +417,6 @@
             updateMarkers();
         }
 
-        // Local 버튼 클릭 시 마지막으로 확인한 자산의 국가로 이동
         function moveToLocal() {
             if (lastViewedAsset && lastViewedAsset.country) {
                 const country = lastViewedAsset.country;
@@ -459,7 +432,6 @@
             }
         }
 
-        // Global 버튼 클릭 시 지도 초기 상태로 복원
         function resetMap() {
             map.setZoom(2);
             map.setCenter({ lat: 0, lng: 0 });
