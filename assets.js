@@ -82,7 +82,7 @@ const assets = [
     {
         position: { lat: 33.595845233556254, lng:  -117.58293778189793 },
         title: "Coto de Caza Golf & Racquet Club",
-        description: "Coto de Caza Golf & Racquet Club은 미국 캘리포니아 오렌지 카운티에 위치한 프라이빗 컨트리 클럽으로, ST International의 해외 부동산 자산입니다. 두 개의 18홀 챔피언십 골프장, 테니스 코트, 고급 클럽하우스를 갖추고 있으며, 지역 내 고소득층을 대상으로 한 프리미엄 레저 서비스를 제공합니다.",
+        description: "미국 캘리포니아 Orange County 내 위치한 Coto de Caza Golf & Racquet Club은 36홀의 골프장과 테니스 코트 10면, 수영장 등 회원들에게 최고의 레저활동 시설을 제공하고 있으며, 2023년 LPGA 데뷔전에서 우승한 Rose Zhang의 홈구장이기도 합니다.",
         logoUrl: "./images/h_logo.png",
         imageUrl: "./images/pp_04.png",
         country: "미국",
@@ -91,7 +91,7 @@ const assets = [
     {
         position: { lat: 33.60051512328318, lng:  -117.72717370904965 },
         title: "Aliso Viejo Country Club",
-        description: "Aliso Viejo Country Club은 캘리포니아 오렌지 카운티의 프라이빗 컨트리 클럽으로, ST International이 투자한 자산입니다. 18홀 골프장, 수영장, 피트니스 센터 등 가족 친화적 시설을 제공하며, 지역 커뮤니티와 레저 활동의 중심지로 자리 잡고 있습니다.",
+        description: "미국 캘리포니아 Orange County 내 위치한 Aliso Viejo Country Club은 아름다운 풍경과 어우러지는 18홀의 골프장과 가족들이 즐길 수 있는 다양한 시설을 회원들에게 제공하고 있습니다.",
         logoUrl: "./images/h_logo.png",
         imageUrl: "./images/pp_05.png",
         country: "미국",
