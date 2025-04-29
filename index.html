@@ -250,13 +250,13 @@
         function filterByCategory() {
             const categoryDropdown = document.getElementById("categoryDropdown");
             selectedCategory = categoryDropdown.value;
-
+        
             if (selectedCategory) {
                 filteredAssets = assets.filter(asset => asset.category === selectedCategory);
             } else {
                 filteredAssets = assets;
             }
-
+        
             const countryDropdown = document.getElementById("countryDropdown");
             selectedCountry = countryDropdown.value;
             if (selectedCountry) {
@@ -265,20 +265,31 @@
             } else {
                 currentCountryAssets = null;
             }
-
+        
             // 조건에 맞는 자산이 없는 경우
             if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
                 alert("해당 자산이 없습니다.");
                 map.setZoom(2);
                 map.setCenter({ lat: 0, lng: 0 });
                 currentCountryAssets = null;
+            } else if (selectedCategory && !selectedCountry) {
+                // 자산군만 선택된 경우: 해당 자산군의 자산들로 경계 설정
+                const bounds = new google.maps.LatLngBounds();
+                filteredAssets.forEach(asset => {
+                    bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
+                });
+                map.fitBounds(bounds);
+                // 최소/최대 줌 레벨 제한 (너무 멀거나 가까운 줌 방지)
+                const currentZoom = map.getZoom();
+                if (currentZoom > 10) map.setZoom(10);
+                if (currentZoom < 2) map.setZoom(2);
             } else if (currentCountryAssets) {
                 moveToAssets();
             } else {
                 map.setZoom(2);
                 map.setCenter({ lat: 0, lng: 0 });
             }
-
+        
             updateMarkers();
         }
 
@@ -402,10 +413,10 @@
                     bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
                 });
                 map.fitBounds(bounds);
-
+        
                 const currentZoom = map.getZoom();
-                if (currentZoom > 10) map.setZoom(10);
-                if (currentZoom < 4) map.setZoom(4);
+                if (currentZoom > 10) map.setZoom(10); // 최대 줌 레벨 제한
+                if (currentZoom < 2) map.setZoom(2);   // 최소 줌 레벨 제한
             }
         }
 
