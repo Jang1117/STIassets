@@ -88,7 +88,7 @@
             background-color: #f0f0f0;
             width: 120px;
             box-sizing: border-box;
-            text-align: center; /* 드랍다운 텍스트 가운데 정렬 */
+            text-align: center;
         }
         #countryDropdown {
             top: 90px;
@@ -198,6 +198,7 @@
         let lastViewedAsset = null;
         let filteredAssets = assets;
         let selectedCategory = "";
+        let selectedCountry = ""; // 선택된 국가 저장
 
         // 지도 초기화 함수
         function initMap() {
@@ -257,7 +258,7 @@
             }
 
             const countryDropdown = document.getElementById("countryDropdown");
-            const selectedCountry = countryDropdown.value;
+            selectedCountry = countryDropdown.value;
             if (selectedCountry) {
                 filteredAssets = filteredAssets.filter(asset => asset.country === selectedCountry);
                 currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
@@ -423,7 +424,7 @@
         // 드랍다운에서 국가 선택 시 이동 함수
         function moveToCountry() {
             const countryDropdown = document.getElementById("countryDropdown");
-            const selectedCountry = countryDropdown.value;
+            selectedCountry = countryDropdown.value;
             if (selectedCountry && assetsByCountry[selectedCountry]) {
                 currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
                 filteredAssets = assets.filter(asset => asset.country === selectedCountry && (!selectedCategory || asset.category === selectedCategory));
@@ -435,8 +436,9 @@
                 } else {
                     moveToAssets();
                 }
-                countryDropdown.value = "";
+                // countryDropdown.value = ""; // 이 부분 제거하여 선택된 국가 유지
             } else {
+                selectedCountry = "";
                 currentCountryAssets = null;
                 filteredAssets = selectedCategory ? assets.filter(asset => asset.category === selectedCategory) : assets;
                 map.setZoom(2);
@@ -475,6 +477,7 @@
             currentCountryAssets = null;
             filteredAssets = selectedCategory ? assets.filter(asset => asset.category === selectedCategory) : assets;
             document.getElementById("countryDropdown").value = "";
+            selectedCountry = ""; // 초기화 시 선택된 국가도 리셋
             updateMarkers();
         }
     </script>
