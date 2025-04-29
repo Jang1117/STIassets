@@ -246,5 +246,15 @@ const assets = [
         country: "한국",
         establishedDate: "2014-08",
         category: "자원/에너지인프라"
-    }    
+    },
+    {
+        position: { lat: 29.75814818041718, lng: -95.3675510865739 },
+        title: "KINDER MORGAN UTOPIA LLC/LTD (UTOPIA)",
+        description: "UTOPIA는 북미에 대규모 에탄을 수송하는 에너지인프라 기업으로 셰일가스 최대 생산지인 OHIO 주 MARCELLUS & UTICA 지역에서 시작하여 캐나다 ONTARIO 주에 위치 한 NOVA CHEMICALS까지 약 268 miles(약 431km)의 파이프라인을 보유하고 있습니다. 안정적 장기계약기반의 자산 안정성이 우수한 투자 자산으로 북미지역의 가스 공급에 기여하고 있습니다.",
+        logoUrl: "./images/invest19.jpg",
+        imageUrl: "./images/eng_15.png",
+        country: "미국",
+        establishedDate: "2019-11",
+        category: "자원/에너지인프라"
+    }   
 ];
