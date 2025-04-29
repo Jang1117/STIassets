@@ -448,7 +448,7 @@
                 filteredAssets = assets.filter(asset => asset.country === selectedCountry && (!selectedCategory || asset.category === selectedCategory));
                 if (filteredAssets.length === 0) {
                     alert("해당 자산이 없습니다.");
-                    map.setZoom(3); // 줌 레벨 3으로 변경
+                    map.setZoom(2);
                     map.setCenter({ lat: 0, lng: 0 });
                     currentCountryAssets = null;
                 } else {
@@ -458,7 +458,7 @@
                 selectedCountry = "";
                 currentCountryAssets = null;
                 filteredAssets = selectedCategory ? assets.filter(asset => asset.category === selectedCategory) : assets;
-                map.setZoom(3); // 줌 레벨 3으로 변경
+                map.setZoom(2);
                 map.setCenter({ lat: 0, lng: 0 });
             }
             updateMarkers();
