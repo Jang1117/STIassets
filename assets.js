@@ -67,7 +67,7 @@ const assets = [
         imageUrl: "./images/eng_04.png",
         country: "베트남",
         establishedDate: "2018-11",
-        category: "신재생에너지"
+        category: "자원/에너지인프라"
     },
     {
         position: { lat: 38.02897653500087, lng: -78.48322332929939 },
@@ -135,7 +135,7 @@ const assets = [
         imageUrl: "./images/eng_10.png",
         country: "인도네시아",
         establishedDate: "2000-06",
-        category: "금융/대체투자"
+        category: "자원/에너지인프라"
     },
     {
         position: { lat: -1.87111795858333, lng: 115.8756424428207 },
@@ -225,7 +225,7 @@ const assets = [
         imageUrl: "./images/eng_13.png",
         country: "인도네시아",
         establishedDate: "2008-03",
-        category: "금융/대체투자"
+        category: "자원/에너지인프라"
     },
     {
         position: { lat: -2.9929246619952967, lng: 104.8509122201326 },
