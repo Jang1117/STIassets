@@ -80,7 +80,7 @@ const assets = [
         category: "신재생에너지"
     },
     {
-        position: { lat: 33.6040, lng: -117.5876 },
+        position: { lat: 33.595845233556254, lng:  -117.58293778189793 },
         title: "Coto de Caza Golf & Racquet Club",
         description: "Coto de Caza Golf & Racquet Club은 미국 캘리포니아 오렌지 카운티에 위치한 프라이빗 컨트리 클럽으로, ST International의 해외 부동산 자산입니다. 두 개의 18홀 챔피언십 골프장, 테니스 코트, 고급 클럽하우스를 갖추고 있으며, 지역 내 고소득층을 대상으로 한 프리미엄 레저 서비스를 제공합니다.",
         logoUrl: "./images/h_logo.png",
@@ -89,7 +89,7 @@ const assets = [
         category: "부동산 자산관리"
     },
     {
-        position: { lat: 33.6270, lng: -117.6789 },
+        position: { lat: 33.60051512328318, lng:  -117.72717370904965 },
         title: "Aliso Viejo Country Club",
         description: "Aliso Viejo Country Club은 캘리포니아 오렌지 카운티의 프라이빗 컨트리 클럽으로, ST International이 투자한 자산입니다. 18홀 골프장, 수영장, 피트니스 센터 등 가족 친화적 시설을 제공하며, 지역 커뮤니티와 레저 활동의 중심지로 자리 잡고 있습니다.",
         logoUrl: "./images/h_logo.png",
