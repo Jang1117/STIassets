@@ -247,51 +247,56 @@
         }
 
         // 자산군 필터링 함수
-        function filterByCategory() {
-            const categoryDropdown = document.getElementById("categoryDropdown");
-            selectedCategory = categoryDropdown.value;
-        
-            if (selectedCategory) {
-                filteredAssets = assets.filter(asset => asset.category === selectedCategory);
-            } else {
-                filteredAssets = assets;
-            }
-        
-            const countryDropdown = document.getElementById("countryDropdown");
-            selectedCountry = countryDropdown.value;
-            if (selectedCountry) {
-                filteredAssets = filteredAssets.filter(asset => asset.country === selectedCountry);
-                currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
-            } else {
-                currentCountryAssets = null;
-            }
-        
-            // 조건에 맞는 자산이 없는 경우
-            if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
-                alert("해당 자산이 없습니다.");
-                map.setZoom(2);
-                map.setCenter({ lat: 0, lng: 0 });
-                currentCountryAssets = null;
-            } else if (selectedCategory && !selectedCountry) {
-                // 자산군만 선택된 경우: 해당 자산군의 자산들로 경계 설정
-                const bounds = new google.maps.LatLngBounds();
-                filteredAssets.forEach(asset => {
-                    bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
-                });
-                map.fitBounds(bounds);
-                // 최소/최대 줌 레벨 제한 (너무 멀거나 가까운 줌 방지)
-                const currentZoom = map.getZoom();
-                if (currentZoom > 10) map.setZoom(10);
-                if (currentZoom < 2) map.setZoom(2);
-            } else if (currentCountryAssets) {
-                moveToAssets();
-            } else {
-                map.setZoom(2);
-                map.setCenter({ lat: 0, lng: 0 });
-            }
-        
-            updateMarkers();
+  function filterByCategory() {
+        const categoryDropdown = document.getElementById("categoryDropdown");
+        selectedCategory = categoryDropdown.value;
+    
+        if (selectedCategory) {
+            filteredAssets = assets.filter(asset => asset.category === selectedCategory);
+        } else {
+            filteredAssets = assets;
         }
+    
+        const countryDropdown = document.getElementById("countryDropdown");
+        selectedCountry = countryDropdown.value;
+        if (selectedCountry) {
+            filteredAssets = filteredAssets.filter(asset => asset.country === selectedCountry);
+            currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
+        } else {
+            currentCountryAssets = null;
+        }
+    
+        // 조건에 맞는 자산이 없는 경우
+        if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
+            alert("해당 자산이 없습니다.");
+            map.setZoom(2);
+            map.setCenter({ lat: 0, lng: 0 });
+            currentCountryAssets = null;
+        } else if (selectedCategory && !selectedCountry) {
+            // 자산군만 선택된 경우: 기존 중심 유지하면서 경계 조정
+            const bounds = new google.maps.LatLngBounds();
+            filteredAssets.forEach(asset => {
+                bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
+            });
+    
+            // 현재 지도 중심을 기준으로 새로운 자산군의 경계를 포함하도록 조정
+            const currentCenter = map.getCenter();
+            bounds.extend(currentCenter); // 기존 중심 포함
+            map.panToBounds(bounds); // 부드럽게 경계 조정
+    
+            // 최소/최대 줌 레벨 제한
+            const currentZoom = map.getZoom();
+            if (currentZoom > 10) map.setZoom(10);
+            if (currentZoom < 2) map.setZoom(2);
+        } else if (currentCountryAssets) {
+            moveToAssets();
+        } else {
+            map.setZoom(2);
+            map.setCenter({ lat: 0, lng: 0 });
+        }
+    
+        updateMarkers();
+    }
 
         // 마커 업데이트 함수
         function updateMarkers() {
