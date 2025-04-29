@@ -198,7 +198,7 @@
         let lastViewedAsset = null;
         let filteredAssets = assets;
         let selectedCategory = "";
-        let selectedCountry = ""; // 선택된 국가 저장
+        let selectedCountry = "";
 
         // 지도 초기화 함수
         function initMap() {
@@ -436,7 +436,6 @@
                 } else {
                     moveToAssets();
                 }
-                // countryDropdown.value = ""; // 이 부분 제거하여 선택된 국가 유지
             } else {
                 selectedCountry = "";
                 currentCountryAssets = null;
@@ -475,9 +474,11 @@
             map.setZoom(2);
             map.setCenter({ lat: 0, lng: 0 });
             currentCountryAssets = null;
-            filteredAssets = selectedCategory ? assets.filter(asset => asset.category === selectedCategory) : assets;
+            filteredAssets = assets; // 모든 자산 표시
             document.getElementById("countryDropdown").value = "";
-            selectedCountry = ""; // 초기화 시 선택된 국가도 리셋
+            document.getElementById("categoryDropdown").value = ""; // 자산군 드랍다운 초기화
+            selectedCountry = "";
+            selectedCategory = "";
             updateMarkers();
         }
     </script>
