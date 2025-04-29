@@ -199,7 +199,6 @@
         let filteredAssets = assets;
         let selectedCategory = "";
         let selectedCountry = "";
-        let categoryCenters = {}; // 자산군별 중심좌표 저장
 
         // 지도 초기화 함수
         function initMap() {
@@ -212,29 +211,6 @@
                 url: './marker.png',
                 scaledSize: new google.maps.Size(40, 40)
             };
-
-            // 자산군별 중심좌표 계산
-            const assetsByCategory = assets.reduce((acc, asset) => {
-                const category = asset.category;
-                if (!acc[category]) {
-                    acc[category] = [];
-                }
-                acc[category].push(asset);
-                return acc;
-            }, {});
-
-            Object.keys(assetsByCategory).forEach(category => {
-                const categoryAssets = assetsByCategory[category];
-                let latSum = 0, lngSum = 0;
-                categoryAssets.forEach(asset => {
-                    latSum += asset.position.lat;
-                    lngSum += asset.position.lng;
-                });
-                categoryCenters[category] = {
-                    lat: latSum / categoryAssets.length,
-                    lng: lngSum / categoryAssets.length
-                };
-            });
 
             assetsByCountry = assets.reduce((acc, asset) => {
                 const country = asset.country;
@@ -254,8 +230,8 @@
             });
 
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 2,
-                center: { lat: 0, lng: 0 },
+                zoom: 3,
+                center: { lat: 21.340505639289695, lng: -162.85451775968681 },
                 fullscreenControl: false,
                 mapTypeId: google.maps.MapTypeId.SATELLITE
             });
@@ -296,10 +272,6 @@
                 map.setZoom(2);
                 map.setCenter({ lat: 0, lng: 0 });
                 currentCountryAssets = null;
-            } else if (selectedCategory && categoryCenters[selectedCategory]) {
-                // 자산군별 중심좌표로 이동
-                map.setCenter(categoryCenters[selectedCategory]);
-                map.setZoom(5); // 고정된 줌 레벨 (필요 시 조정)
             } else if (currentCountryAssets) {
                 moveToAssets();
             } else {
@@ -502,9 +474,9 @@
             map.setZoom(2);
             map.setCenter({ lat: 0, lng: 0 });
             currentCountryAssets = null;
-            filteredAssets = assets;
+            filteredAssets = assets; // 모든 자산 표시
             document.getElementById("countryDropdown").value = "";
-            document.getElementById("categoryDropdown").value = "";
+            document.getElementById("categoryDropdown").value = ""; // 자산군 드랍다운 초기화
             selectedCountry = "";
             selectedCategory = "";
             updateMarkers();
