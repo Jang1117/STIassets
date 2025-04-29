@@ -276,5 +276,15 @@ const assets = [
         country: "한국",
         establishedDate: "2024-10",
         category: "금융/대체투자"
-    }   
+    },
+    {
+        position: { lat: 33.69237638952657, lng:-117.7667659226209 },
+        title: "STI USA",
+        description: "STI USA는 미국의 캘리포니아에 위치한 오피스/물류센터 등 부동산 사업을 중점적으로 영위하고 있으며 향후 유망사업기회 발굴을 위한 전략적 지역 거점으로서 역할을 확대해 나갈 것입니다.",
+        logoUrl: "./images/invest21.jpg",
+        imageUrl: "",
+        country: "미국",
+        establishedDate: "1999-04",
+        category: "부동산 자산관리"
+    }  
 ];
