@@ -236,5 +236,15 @@ const assets = [
         country: "인도네시아",
         establishedDate: "2010-07",
         category: "자원/에너지인프라"
-    }
+    },
+    {
+        position: { lat: 37.475283, lng: 129.146517 },
+        title: "(주)GS동해",
+        description: "GS동해전력은 2010년 정부의 제5차 전력수급기본계획에 따라 추진된 1,190MW (595MW x 2기) 용량의 국내 최초 민자 기저 화력발전소입니다. 최신식 탈황탈질 시스템을 도입해 대기오염물질 배출을 최소화한 초초임계압 고성능 화력발전소이며 총괄원가보상제 기반의 안정적 수익을 창출하고 있습니다.",
+        logoUrl: "./images/invest06.jpg",
+        imageUrl: "./images/eng_01.png",
+        country: "한국",
+        establishedDate: "2014-08",
+        category: "자원/에너지인프라"
+    }    
 ];
