@@ -190,7 +190,7 @@ const assets = [
     {
         position: { lat: -1.2377230825786019, lng: 116.94586105518377 },
         title: "PT. TRANSKON JAYA (TRJA)",
-        description: "MINTEC은 KIDECO 가치의 핵심인 매장량과 가채광량 산정을 위해, 광구내 시추 및 탐사 활동 수행을 위한 자원탐사(Mining Service) 기업으로 석탄광 시추탐사, 매장량 산출, 개발관리 및 컨설팅 업무를 수행하고 있습니다.",
+        description: "TRJA는 광산용 차량 렌탈업체로 인도네시아 전역에 약 3.0천대의 차량을 공급/관리하고 있습니다. 우수한 고객과의 파트너십을 기반으로 차량당 2~3년 장기계약을 맺고 있어, 안정적 수익을 창출합니다. 2023.11월에 SRT가 기존 사업과의 시너지 확대를 위해 인수하였으며 현재 다양한 사업을 계획하고 있습니다.",
         logoUrl: "./images/invest23.jpg",
         imageUrl: "./images/eng_16.png",
         country: "인도네시아",
