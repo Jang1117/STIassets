@@ -230,7 +230,7 @@
             });
 
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 2,
+                zoom: 3,
                 center: { lat: 0, lng: 0 },
                 fullscreenControl: false,
                 mapTypeId: google.maps.MapTypeId.SATELLITE
@@ -269,7 +269,7 @@
         // 조건에 맞는 자산이 없는 경우
         if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
             alert("해당 자산이 없습니다.");
-            map.setZoom(2);
+            map.setZoom(3);
             map.setCenter({ lat: 0, lng: 0 });
             currentCountryAssets = null;
         } else if (selectedCategory && !selectedCountry) {
@@ -287,11 +287,11 @@
             // 최소/최대 줌 레벨 제한
             const currentZoom = map.getZoom();
             if (currentZoom > 10) map.setZoom(10);
-            if (currentZoom < 2) map.setZoom(2);
+            if (currentZoom < 2) map.setZoom(3);
         } else if (currentCountryAssets) {
             moveToAssets();
         } else {
-            map.setZoom(2);
+            map.setZoom(3);
             map.setCenter({ lat: 0, lng: 0 });
         }
     
@@ -421,7 +421,7 @@
         
                 const currentZoom = map.getZoom();
                 if (currentZoom > 10) map.setZoom(10); // 최대 줌 레벨 제한
-                if (currentZoom < 2) map.setZoom(2);   // 최소 줌 레벨 제한
+                if (currentZoom < 2) map.setZoom(3);   // 최소 줌 레벨 제한
             }
         }
 
@@ -430,7 +430,7 @@
             currentCountryAssets = assetsByCountry[country].filter(asset => !selectedCategory || asset.category === selectedCategory);
             if (currentCountryAssets.length === 0) {
                 alert("해당 자산이 없습니다.");
-                map.setZoom(2);
+                map.setZoom(3);
                 map.setCenter({ lat: 0, lng: 0 });
                 currentCountryAssets = null;
             } else {
@@ -448,7 +448,7 @@
                 filteredAssets = assets.filter(asset => asset.country === selectedCountry && (!selectedCategory || asset.category === selectedCategory));
                 if (filteredAssets.length === 0) {
                     alert("해당 자산이 없습니다.");
-                    map.setZoom(2);
+                    map.setZoom(3);
                     map.setCenter({ lat: 0, lng: 0 });
                     currentCountryAssets = null;
                 } else {
@@ -458,7 +458,7 @@
                 selectedCountry = "";
                 currentCountryAssets = null;
                 filteredAssets = selectedCategory ? assets.filter(asset => asset.category === selectedCategory) : assets;
-                map.setZoom(2);
+                map.setZoom(3);
                 map.setCenter({ lat: 0, lng: 0 });
             }
             updateMarkers();
@@ -473,7 +473,7 @@
                     filteredAssets = assets.filter(asset => asset.country === country && (!selectedCategory || asset.category === selectedCategory));
                     if (filteredAssets.length === 0) {
                         alert("해당 자산이 없습니다.");
-                        map.setZoom(2);
+                        map.setZoom(3);
                         map.setCenter({ lat: 0, lng: 0 });
                         currentCountryAssets = null;
                     } else {
@@ -489,7 +489,7 @@
 
         // Global 버튼 클릭 시 지도 초기 상태로 복원
         function resetMap() {
-            map.setZoom(2);
+            map.setZoom(3);
             map.setCenter({ lat: 0, lng: 0 });
             currentCountryAssets = null;
             filteredAssets = assets; // 모든 자산 표시
