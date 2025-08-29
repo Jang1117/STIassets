@@ -47,10 +47,6 @@
             max-width: 100%;
             margin-top: 8px;
         }
-        /* Google Maps 기본 닫기 버튼 숨기기 */
-        .gm-style-iw button {
-            display: none !important;
-        }
         /* Global, Local 버튼 및 드랍다운 스타일 */
         .global-button, .local-button {
             position: absolute;
@@ -233,7 +229,8 @@
                 zoom: 2,
                 center: { lat: 0, lng: 0 },
                 fullscreenControl: false,
-                mapTypeId: google.maps.MapTypeId.SATELLITE
+                mapTypeId: google.maps.MapTypeId.SATELLITE,
+                clickableIcons: false
             });
 
             console.log(`Zoom level: ${map.getZoom()}`);
@@ -499,6 +496,14 @@
             selectedCategory = "";
             updateMarkers();
         }
+
+        // 팝업 바깥 클릭 시 닫기
+        const popupOverlay = document.getElementById("popupOverlay");
+        popupOverlay.addEventListener("click", function(event) {
+            if (event.target === popupOverlay) {
+                closePopup();
+            }
+        });
     </script>
 
     <!-- Google Maps JavaScript API 로드 -->
