@@ -172,7 +172,6 @@
         <option value="금융/대체투자">금융/대체투자</option>
         <option value="부동산 자산관리">부동산 자산관리</option>
     </select>
-
     <!-- 팝업 창 -->
     <div class="popup-overlay" id="popupOverlay">
         <div class="popup-content" id="popupContent">
@@ -182,7 +181,6 @@
             <div id="popupExtra"></div>
         </div>
     </div>
-
     <!-- assets.js 로드 -->
     <script src="./assets.js"></script>
     <script>
@@ -195,19 +193,27 @@
         let filteredAssets = assets;
         let selectedCategory = "";
         let selectedCountry = "";
-
+        
+        // 국가별 아이콘 매핑
+        const countryIcons = {
+            '미국': './us.png',
+            '인도네시아': './id.png',
+            '베트남': './vn.png',
+            '한국': './kr.png'
+        };
+        
+        // 국가별 아이콘 가져오기 함수
+        function getCountryIcon(country) {
+            return countryIcons[country] || './marker.png'; // 기본 마커로 fallback
+        }
+        
         // 지도 초기화 함수
         function initMap() {
             if (typeof assets === "undefined") {
                 console.error("Error: 'assets' is not defined. Ensure assets.js is loaded correctly.");
                 return;
             }
-
-            const customMarkerIcon = {
-                url: './marker.png',
-                scaledSize: new google.maps.Size(40, 40)
-            };
-
+            
             assetsByCountry = assets.reduce((acc, asset) => {
                 const country = asset.country;
                 if (!acc[country]) {
@@ -216,7 +222,7 @@
                 acc[country].push(asset);
                 return acc;
             }, {});
-
+            
             const countryDropdown = document.getElementById("countryDropdown");
             Object.keys(assetsByCountry).sort().forEach(country => {
                 const option = document.createElement("option");
@@ -224,7 +230,7 @@
                 option.textContent = country;
                 countryDropdown.appendChild(option);
             });
-
+            
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 2,
                 center: { lat: 0, lng: 0 },
@@ -232,81 +238,78 @@
                 mapTypeId: google.maps.MapTypeId.SATELLITE,
                 clickableIcons: false
             });
-
+            
             console.log(`Zoom level: ${map.getZoom()}`);
-
             map.addListener("zoom_changed", () => {
                 console.log(`Zoom level: ${map.getZoom()}`);
                 updateMarkers();
             });
-
+            
             updateMarkers();
         }
-
+        
         // 자산군 필터링 함수
-  function filterByCategory() {
-        const categoryDropdown = document.getElementById("categoryDropdown");
-        selectedCategory = categoryDropdown.value;
-    
-        if (selectedCategory) {
-            filteredAssets = assets.filter(asset => asset.category === selectedCategory);
-        } else {
-            filteredAssets = assets;
+        function filterByCategory() {
+            const categoryDropdown = document.getElementById("categoryDropdown");
+            selectedCategory = categoryDropdown.value;
+        
+            if (selectedCategory) {
+                filteredAssets = assets.filter(asset => asset.category === selectedCategory);
+            } else {
+                filteredAssets = assets;
+            }
+        
+            const countryDropdown = document.getElementById("countryDropdown");
+            selectedCountry = countryDropdown.value;
+            if (selectedCountry) {
+                filteredAssets = filteredAssets.filter(asset => asset.country === selectedCountry);
+                currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
+            } else {
+                currentCountryAssets = null;
+            }
+        
+            // 조건에 맞는 자산이 없는 경우
+            if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
+                alert("해당 자산이 없습니다.");
+                map.setZoom(2);
+                map.setCenter({ lat: 0, lng: 0 });
+                currentCountryAssets = null;
+            } else if (selectedCategory && !selectedCountry) {
+                // 자산군만 선택된 경우: 기존 중심 유지하면서 경계 조정
+                const bounds = new google.maps.LatLngBounds();
+                filteredAssets.forEach(asset => {
+                    bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
+                });
+        
+                // 현재 지도 중심을 기준으로 새로운 자산군의 경계를 포함하도록 조정
+                const currentCenter = map.getCenter();
+                bounds.extend(currentCenter); // 기존 중심 포함
+                map.panToBounds(bounds); // 부드럽게 경계 조정
+        
+                // 최소/최대 줌 레벨 제한
+                const currentZoom = map.getZoom();
+                if (currentZoom > 10) map.setZoom(10);
+                if (currentZoom < 2) map.setZoom(2);
+            } else if (currentCountryAssets) {
+                moveToAssets();
+            } else {
+                map.setZoom(2);
+                map.setCenter({ lat: 0, lng: 0 });
+            }
+        
+            updateMarkers();
         }
-    
-        const countryDropdown = document.getElementById("countryDropdown");
-        selectedCountry = countryDropdown.value;
-        if (selectedCountry) {
-            filteredAssets = filteredAssets.filter(asset => asset.country === selectedCountry);
-            currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
-        } else {
-            currentCountryAssets = null;
-        }
-    
-        // 조건에 맞는 자산이 없는 경우
-        if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
-            alert("해당 자산이 없습니다.");
-            map.setZoom(2);
-            map.setCenter({ lat: 0, lng: 0 });
-            currentCountryAssets = null;
-        } else if (selectedCategory && !selectedCountry) {
-            // 자산군만 선택된 경우: 기존 중심 유지하면서 경계 조정
-            const bounds = new google.maps.LatLngBounds();
-            filteredAssets.forEach(asset => {
-                bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
-            });
-    
-            // 현재 지도 중심을 기준으로 새로운 자산군의 경계를 포함하도록 조정
-            const currentCenter = map.getCenter();
-            bounds.extend(currentCenter); // 기존 중심 포함
-            map.panToBounds(bounds); // 부드럽게 경계 조정
-    
-            // 최소/최대 줌 레벨 제한
-            const currentZoom = map.getZoom();
-            if (currentZoom > 10) map.setZoom(10);
-            if (currentZoom < 2) map.setZoom(2);
-        } else if (currentCountryAssets) {
-            moveToAssets();
-        } else {
-            map.setZoom(2);
-            map.setCenter({ lat: 0, lng: 0 });
-        }
-    
-        updateMarkers();
-    }
-
+        
         // 마커 업데이트 함수
         function updateMarkers() {
             markers.forEach(marker => marker.setMap(null));
             markers = [];
-
             const zoom = map.getZoom();
             let assetsToShow = filteredAssets;
-
             if (currentCountryAssets) {
                 assetsToShow = currentCountryAssets;
             }
-
+            
             if (zoom <= 3) {
                 const filteredAssetsByCountry = assetsToShow.reduce((acc, asset) => {
                     const country = asset.country;
@@ -316,7 +319,7 @@
                     acc[country].push(asset);
                     return acc;
                 }, {});
-
+                
                 Object.keys(filteredAssetsByCountry).forEach(country => {
                     const countryAssets = filteredAssetsByCountry[country];
                     let latSum = 0, lngSum = 0;
@@ -328,23 +331,23 @@
                         lat: latSum / countryAssets.length,
                         lng: lngSum / countryAssets.length
                     };
-
+                    
                     const marker = new google.maps.Marker({
                         position: center,
                         map: map,
                         title: `${country}: ${countryAssets.length}개 자산`,
                         icon: {
-                            url: './marker.png',
+                            url: getCountryIcon(country),
                             scaledSize: new google.maps.Size(40, 40)
                         }
                     });
-
+                    
                     marker.addListener("click", () => {
                         showPopup(country, `${country}: ${countryAssets.length}개 자산`, `이 국가에는 ${countryAssets.length}개의 자산이 있습니다.`, `
                             <button class="move-button" onclick="moveToAssetsWrapper('${country}')">자산 이동</button>
                         `);
                     });
-
+                    
                     markers.push(marker);
                 });
             } else {
@@ -354,7 +357,7 @@
                         map: map,
                         title: asset.title,
                         icon: {
-                            url: './marker.png',
+                            url: getCountryIcon(asset.country),
                             scaledSize: new google.maps.Size(40, 40)
                         }
                     });
@@ -375,38 +378,38 @@
                 });
             }
         }
-
+        
         // 팝업 창 표시 함수
         function showPopup(id, title, description, extraContent, asset = null) {
             const popupOverlay = document.getElementById("popupOverlay");
             const popupTitle = document.getElementById("popupTitle");
             const popupDescription = document.getElementById("popupDescription");
             const popupExtra = document.getElementById("popupExtra");
-
+            
             popupTitle.textContent = title;
             popupDescription.textContent = description;
             popupExtra.innerHTML = extraContent;
-
+            
             if (asset) {
                 lastViewedAsset = asset;
             }
-
+            
             if (id in assetsByCountry) {
                 currentCountryAssets = assetsByCountry[id].filter(asset => !selectedCategory || asset.category === selectedCategory);
             } else {
                 currentCountryAssets = null;
             }
-
+            
             popupOverlay.style.display = "block";
         }
-
+        
         // 팝업 창 닫기 함수
         function closePopup() {
             const popupOverlay = document.getElementById("popupOverlay");
             popupOverlay.style.display = "none";
             currentCountryAssets = null;
         }
-
+        
         // 자산으로 이동 함수
         function moveToAssets() {
             if (currentCountryAssets) {
@@ -421,7 +424,7 @@
                 if (currentZoom < 2) map.setZoom(2);   // 최소 줌 레벨 제한
             }
         }
-
+        
         // 자산 이동 래퍼 함수
         function moveToAssetsWrapper(country) {
             currentCountryAssets = assetsByCountry[country].filter(asset => !selectedCategory || asset.category === selectedCategory);
@@ -435,7 +438,7 @@
             }
             closePopup();
         }
-
+        
         // 드랍다운에서 국가 선택 시 이동 함수
         function moveToCountry() {
             const countryDropdown = document.getElementById("countryDropdown");
@@ -460,7 +463,7 @@
             }
             updateMarkers();
         }
-
+        
         // Local 버튼 클릭 시 마지막으로 확인한 자산의 국가로 이동
         function moveToLocal() {
             if (lastViewedAsset && lastViewedAsset.country) {
@@ -483,7 +486,7 @@
                 alert("아직 확인한 자산이 없습니다. 자산을 클릭해 주세요.");
             }
         }
-
+        
         // Global 버튼 클릭 시 지도 초기 상태로 복원
         function resetMap() {
             map.setZoom(2);
@@ -496,7 +499,7 @@
             selectedCategory = "";
             updateMarkers();
         }
-
+        
         // 팝업 바깥 클릭 시 닫기
         const popupOverlay = document.getElementById("popupOverlay");
         popupOverlay.addEventListener("click", function(event) {
@@ -505,7 +508,6 @@
             }
         });
     </script>
-
     <!-- Google Maps JavaScript API 로드 -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKZ64N6aTmQLaU312nCqXeyrNa-lol2IQ&callback=initMap&loading=async">
