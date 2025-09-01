@@ -100,7 +100,7 @@ const assets = [
     {
         position: { lat: -8.791693307039518, lng: 115.22992216833617 },
         title: "Sofitel Bali Nusa Dua",
-        description: "Sofitel은 인도네시아 발리 Nusa Dua 내의 5성급 리조트 호텔입니다. 글로벌 Top Tier 호텔 그룹 Accor의 최상위 브랜드를 바탕으로 2013년 APEC, 2018년 IMF 개최, 2022년 G20관련 행사와 회의가 개최된 발리 최고의 호텔 중 하나입니다",
+        description: "Sofitel Bali는 ST인터내셔널의 Hospitality 및 Property 분야 사업확장 전략을 상징하는 핵심 자산입니다. 2013년 발리 APEC 정상회의 호스트 호텔로 개장한 이후, 인도네시아 발리를 대표하는 MICE 호텔로 자리매김해왔으며, 2018년 IMF 연차총회, 2022년 G20 및 B20 정상회의 등 주요 글로벌 행사를 성공적으로 주관했습니다. MICE 분야의 독보적 경쟁력 외에도, 휴양 및 F&B 부문에서도 탁월한 평가를 받고 있으며, World MICE Awards와 World Travel Awards 등에서 ‘인도네시아 최고의 MICE 호텔’, ‘Asia’s Leading Resort’, ‘Bali’s Leading Family Resort’로 선정되는 등 그 가치를 지속적으로 인정받고 있습니다.",
         logoUrl: "https://sofitelbalinusadua.com/wp-content/uploads/2022/01/SBND-Hotel-Logo-Gold.svg",
         imageUrl: "./images/pp_01.png",
         country: "인도네시아",
@@ -298,3 +298,4 @@ const assets = [
         category: "부동산 자산관리"
     }  
 ];
+
