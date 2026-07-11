@@ -603,7 +603,6 @@
             document.querySelectorAll(".category-chip-btn").forEach(el => {
                 el.classList.toggle("active", el.dataset.filter === slug);
             });
-            updateMarkers();
 
             // 로컬(국가) 상태에서 필터링하면, 그 국가의 필터링된 자산이 한눈에 보이도록 줌 재조정
             if (currentCountry) {
@@ -613,6 +612,21 @@
                     moveToAssets();
                 }
             }
+            updateMarkers();
+        }
+
+        // 국가별 중심을 동일한 비중으로 반영하고, 날짜변경선 부근도 자연스럽게 처리한다.
+        function getGlobalAssetCenter(groupedAssets) {
+            const countryCenters = Object.values(groupedAssets).map(countryAssets => ({
+                lat: countryAssets.reduce((sum, asset) => sum + asset.position.lat, 0) / countryAssets.length,
+                lng: countryAssets.reduce((sum, asset) => sum + asset.position.lng, 0) / countryAssets.length
+            }));
+
+            const lat = countryCenters.reduce((sum, center) => sum + center.lat, 0) / countryCenters.length;
+            const sinSum = countryCenters.reduce((sum, center) => sum + Math.sin(center.lng * Math.PI / 180), 0);
+            const cosSum = countryCenters.reduce((sum, center) => sum + Math.cos(center.lng * Math.PI / 180), 0);
+            const lng = Math.atan2(sinSum, cosSum) * 180 / Math.PI;
+            return { lat, lng };
         }
 
         // 카테고리별 자산 개수 집계 (하단 패널 표시용)
@@ -675,10 +689,11 @@
                 countryDropdown.appendChild(option);
             });
 
-            // 지도 중심 설정 (전 세계)
+            // 실제 진출 국가들의 위치 분포를 기준으로 첫 화면 중심 설정
+            const globalCenter = getGlobalAssetCenter(assetsByCountry);
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 3,
-                center: { lat: 0, lng: 0 },
+                center: globalCenter,
                 fullscreenControl: false,
                 mapTypeId: google.maps.MapTypeId.SATELLITE
             });
@@ -808,18 +823,33 @@
 
         // 자산으로 이동 함수
         function moveToAssets() {
-            if (currentCountryAssets) {
-                const bounds = new google.maps.LatLngBounds();
-                currentCountryAssets.forEach(asset => {
-                    bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
-                });
-                map.fitBounds(bounds);
+            if (!currentCountryAssets || currentCountryAssets.length === 0) return;
 
-                // 줌 레벨 제한
-                const currentZoom = map.getZoom();
-                if (currentZoom > 10) map.setZoom(10);
-                if (currentZoom < 4) map.setZoom(4);
-            }
+            const lats = currentCountryAssets.map(asset => asset.position.lat);
+            const lngs = currentCountryAssets.map(asset => asset.position.lng);
+            const minLat = Math.min(...lats);
+            const maxLat = Math.max(...lats);
+            const minLng = Math.min(...lngs);
+            const maxLng = Math.max(...lngs);
+            const center = { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 };
+
+            // fitBounds의 자동 이동 애니메이션 대신 필요한 줌을 직접 계산해 즉시 이동한다.
+            const mapElement = document.getElementById("map");
+            const padding = 100;
+            const availableWidth = Math.max(mapElement.clientWidth - padding, 256);
+            const availableHeight = Math.max(mapElement.clientHeight - padding, 256);
+            const lngFraction = Math.max((maxLng - minLng) / 360, 1 / Math.pow(2, 10));
+            const latToMercator = lat => {
+                const sin = Math.sin(lat * Math.PI / 180);
+                return Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI);
+            };
+            const latFraction = Math.max(Math.abs(latToMercator(maxLat) - latToMercator(minLat)), 1 / Math.pow(2, 10));
+            const zoom = Math.max(4, Math.min(10, Math.floor(Math.min(
+                Math.log2(availableWidth / 256 / lngFraction),
+                Math.log2(availableHeight / 256 / latFraction)
+            ))));
+
+            map.moveCamera({ center, zoom });
         }
 
         // 드랍다운에서 국가 선택 시 이동 함수
@@ -837,8 +867,7 @@
 
         // Global 버튼 클릭 시 지도 초기 상태로 복원
         function resetMap() {
-            map.setZoom(3);
-            map.setCenter({ lat: 0, lng: 0 });
+            map.moveCamera({ center: getGlobalAssetCenter(assetsByCountry), zoom: 3 });
             currentCountry = null;
             updateMarkers();
             document.getElementById("localCountrySelect").value = "";
