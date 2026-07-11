@@ -31,6 +31,7 @@
             height: 100%;
             margin: 0;
             padding: 0;
+            overflow: hidden;
             font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             color: var(--text);
         }
@@ -178,7 +179,7 @@
         /* 범례 / 통계 패널 */
         .legend-panel {
             position: fixed;
-            right: 20px;
+            left: 20px;
             bottom: 24px;
             z-index: 900;
             background: rgba(255, 255, 255, 0.97);
@@ -676,7 +677,7 @@
 
             // 지도 중심 설정 (전 세계)
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 2,
+                zoom: 3,
                 center: { lat: 0, lng: 0 },
                 fullscreenControl: false,
                 mapTypeId: google.maps.MapTypeId.SATELLITE
@@ -836,7 +837,7 @@
 
         // Global 버튼 클릭 시 지도 초기 상태로 복원
         function resetMap() {
-            map.setZoom(2);
+            map.setZoom(3);
             map.setCenter({ lat: 0, lng: 0 });
             currentCountry = null;
             updateMarkers();
