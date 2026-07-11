@@ -4,98 +4,251 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ST International 자산 지도</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* 지도 스타일 */
-        #map {
-            height: 100vh;
-            width: 100%;
+        :root {
+            --navy: #16324f;
+            --navy-dark: #0d2036;
+            --navy-light: #274b73;
+            --green: #16a34a;
+            --amber: #d97706;
+            --slate: #64748b;
+            --bg: #f5f7fa;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+            --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.14);
+            --shadow-lg: 0 20px 48px rgba(15, 23, 42, 0.22);
         }
+
+        * { box-sizing: border-box; }
+
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
+            font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
         }
-        /* InfoWindow 스타일 (더 이상 사용되지 않음, 유지 목적) */
-        .info-window {
-            font-family: Arial, sans-serif;
-            max-width: 480px;
-        }
-        .info-window-header {
+
+        /* 상단 바 */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--navy);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
         }
-        .info-window-header h3 {
-            margin: 0;
-            font-size: 18px;
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        .close-button {
-            cursor: pointer;
-            color: #000000;
-            font-weight: bold;
+
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+        }
+
+        .brand-text strong {
+            color: var(--white);
             font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
         }
-        .info-window p {
-            margin: 8px 0 0;
-            font-size: 16px;
+
+        .brand-text span {
+            color: #b9c6d4;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
         }
-        .info-window img.logo {
-            max-width: 130px;
-            margin-top: 8px;
+
+        .topbar-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        .info-window img.asset-image {
-            max-width: 100%;
-            margin-top: 8px;
+
+        .segmented {
+            display: flex;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            padding: 3px;
         }
-        /* Global, Local 버튼 및 드랍다운 스타일 */
+
         .global-button, .local-button {
-            position: absolute;
-            right: 10px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 8px 12px;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 16px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            color: #cbd5e1;
             cursor: pointer;
-            z-index: 1000;
-            width: 120px;
-            box-sizing: border-box;
-            text-align: center;
+            transition: background 0.15s ease, color 0.15s ease;
         }
-        .global-button {
-            top: 10px;
-        }
-        .local-button {
-            top: 50px;
-        }
+
         .global-button:hover, .local-button:hover {
-            background-color: #e0e0e0;
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--white);
         }
-        #countryDropdown, #categoryDropdown {
-            position: absolute;
-            right: 10px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            z-index: 1000;
-            background-color: #f0f0f0;
-            width: 120px;
-            box-sizing: border-box;
-            text-align: center;
+
+        .global-button.active, .local-button.active {
+            background: var(--white);
+            color: var(--navy);
+            font-weight: 700;
         }
+
         #countryDropdown {
-            top: 90px;
+            appearance: none;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.08) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%23cbd5e1"/></svg>') no-repeat right 12px center;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            padding: 8px 32px 8px 14px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--white);
+            cursor: pointer;
+            min-width: 120px;
         }
-        #categoryDropdown {
-            top: 130px;
+
+        #countryDropdown option {
+            color: var(--text);
         }
-        #countryDropdown:focus, #categoryDropdown:focus {
+
+        #countryDropdown:focus {
             outline: none;
-            border-color: #007bff;
+            border-color: var(--white);
         }
+
+        /* 지도 */
+        /* Google Maps가 초기화 시 이 요소의 position을 강제로 relative로 덮어쓰므로,
+           fixed+inset 방식 대신 margin-top과 명시적 height로 크기를 지정한다. */
+        #map {
+            margin-top: 64px;
+            height: calc(100vh - 64px);
+            width: 100%;
+        }
+
+        /* 범례 / 통계 패널 */
+        .legend-panel {
+            position: fixed;
+            left: 20px;
+            bottom: 24px;
+            z-index: 900;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            padding: 16px 18px;
+            min-width: 200px;
+            font-size: 13px;
+        }
+
+        .legend-stats {
+            display: flex;
+            gap: 20px;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .legend-stats .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .legend-stats .stat strong {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            color: var(--navy);
+            line-height: 1.2;
+        }
+
+        .legend-stats .stat span {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .legend-categories {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .legend-item .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-realestate { background: var(--slate); }
+        .dot-renewable { background: var(--green); }
+        .dot-resource { background: var(--amber); }
+
+        /* 카테고리 배지 */
+        .category-badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+            color: var(--white);
+        }
+
+        .category-realestate { background: var(--slate); }
+        .category-renewable { background: var(--green); }
+        .category-resource { background: var(--amber); }
+
+        /* Google Maps 기본 닫기 버튼 숨기기 */
+        .gm-style-iw button {
+            display: none !important;
+        }
+
         /* 팝업 창 스타일 */
         .popup-overlay {
             display: none;
@@ -104,83 +257,152 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(13, 32, 54, 0.55);
             z-index: 2000;
         }
+
         .popup-content {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 360px;
+            background: var(--white);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 400px;
             max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
             text-align: left;
         }
+
         .popup-content h3 {
-            margin: 0 0 10px;
-            font-size: 22px;
+            margin: 0 0 12px;
+            padding-right: 24px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--navy);
         }
+
         .popup-content p {
             margin: 0 0 15px;
-            font-size: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text);
         }
+
         .popup-content .established-date {
-            font-weight: bold;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--navy-light);
+            background: #eef2f7;
+            padding: 5px 10px;
+            border-radius: 6px;
         }
+
         .popup-content .close-button {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 16px;
+            right: 16px;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
             cursor: pointer;
-            color: #000000;
+            color: var(--text-muted);
             font-weight: bold;
-            font-size: 16px;
-        }
-        .popup-content .move-button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
             font-size: 14px;
+            background: var(--bg);
+            transition: background 0.15s ease, color 0.15s ease;
         }
+
+        .popup-content .close-button:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .popup-content .move-button {
+            background-color: var(--navy);
+            color: var(--white);
+            border: none;
+            padding: 9px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.15s ease;
+        }
+
         .popup-content .move-button:hover {
-            background-color: #0056b3;
+            background-color: var(--navy-light);
         }
+
         .popup-content img.asset-image {
             max-width: 100%;
-            margin-top: 8px;
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            margin-top: 4px;
+            border-radius: 10px;
+            display: block;
         }
     </style>
 </head>
 <body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-mark">ST</span>
+            <div class="brand-text">
+                <strong>ST International</strong>
+                <span>Global Asset Map</span>
+            </div>
+        </div>
+        <div class="topbar-controls">
+            <div class="segmented">
+                <button class="global-button active" id="globalBtn" onclick="resetMap()">Global</button>
+                <button class="local-button" id="localBtn" onclick="moveToLocal()">Local</button>
+            </div>
+            <select id="countryDropdown" onchange="moveToCountry()">
+                <option value="">국가 선택</option>
+            </select>
+        </div>
+    </header>
+
     <div id="map"></div>
-    <button class="global-button" onclick="resetMap()">Global</button>
-    <button class="local-button" onclick="moveToLocal()">Local</button>
-    <select id="countryDropdown" onchange="moveToCountry()">
-        <option value="">국가</option>
-    </select>
-    <select id="categoryDropdown" onchange="filterByCategory()">
-        <option value="">자산군</option>
-        <option value="신재생에너지">신재생에너지</option>
-        <option value="자원/에너지인프라">자원/에너지인프라</option>
-        <option value="금융/대체투자">금융/대체투자</option>
-        <option value="부동산 자산관리">부동산 자산관리</option>
-    </select>
+
+    <div class="legend-panel" id="legendPanel">
+        <div class="legend-stats">
+            <div class="stat">
+                <strong id="statTotal">0</strong>
+                <span>총 자산</span>
+            </div>
+            <div class="stat">
+                <strong id="statCountries">0</strong>
+                <span>진출 국가</span>
+            </div>
+        </div>
+        <div class="legend-categories">
+            <div class="legend-item"><span class="dot dot-realestate"></span>부동산 자산관리</div>
+            <div class="legend-item"><span class="dot dot-renewable"></span>신재생에너지</div>
+            <div class="legend-item"><span class="dot dot-resource"></span>자원/에너지인프라</div>
+        </div>
+    </div>
+
     <!-- 팝업 창 -->
     <div class="popup-overlay" id="popupOverlay">
         <div class="popup-content" id="popupContent">
-            <span class="close-button" onclick="closePopup()">X</span>
+            <span class="close-button" onclick="closePopup()">✕</span>
             <h3 id="popupTitle"></h3>
             <p id="popupDescription"></p>
             <div id="popupExtra"></div>
         </div>
     </div>
+
     <!-- assets.js 로드 -->
     <script src="./assets.js"></script>
     <script>
@@ -189,31 +411,35 @@
         let markers = [];
         let currentCountryAssets = null;
         let assetsByCountry = null;
-        let lastViewedAsset = null;
-        let filteredAssets = assets;
-        let selectedCategory = "";
-        let selectedCountry = "";
-        
-        // 국가별 아이콘 매핑
-        const countryIcons = {
-            '미국': './us.png',
-            '인도네시아': './id.png',
-            '베트남': './vn.png',
-            '한국': './kr.png'
+        let lastViewedAsset = null; // 마지막으로 확인한 자산 저장
+        let updateMarkers = () => {}; // initMap에서 실제 구현이 할당됨 (전역에서도 호출 가능하도록)
+
+        // 카테고리 -> 스타일 클래스 매핑
+        const categoryClassMap = {
+            "부동산 자산관리": "realestate",
+            "신재생에너지": "renewable",
+            "자원/에너지인프라": "resource"
         };
-        
-        // 국가별 아이콘 가져오기 함수
-        function getCountryIcon(country) {
-            return countryIcons[country] || './marker.png'; // 기본 마커로 fallback
+
+        function categoryClass(category) {
+            return categoryClassMap[category] || "realestate";
         }
-        
+
         // 지도 초기화 함수
         function initMap() {
+            // assets 변수가 정의되었는지 확인
             if (typeof assets === "undefined") {
                 console.error("Error: 'assets' is not defined. Ensure assets.js is loaded correctly.");
                 return;
             }
-            
+
+            // 커스텀 마커 아이콘
+            const customMarkerIcon = {
+                url: './marker.png',
+                scaledSize: new google.maps.Size(40, 40)
+            };
+
+            // 자산을 국가별로 그룹화
             assetsByCountry = assets.reduce((acc, asset) => {
                 const country = asset.country;
                 if (!acc[country]) {
@@ -222,7 +448,12 @@
                 acc[country].push(asset);
                 return acc;
             }, {});
-            
+
+            // 통계 패널 업데이트
+            document.getElementById("statTotal").textContent = assets.length;
+            document.getElementById("statCountries").textContent = Object.keys(assetsByCountry).length;
+
+            // 드랍다운 메뉴에 국가 목록 추가
             const countryDropdown = document.getElementById("countryDropdown");
             Object.keys(assetsByCountry).sort().forEach(country => {
                 const option = document.createElement("option");
@@ -230,186 +461,136 @@
                 option.textContent = country;
                 countryDropdown.appendChild(option);
             });
-            
+
+            // 지도 중심 설정 (전 세계)
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 2,
                 center: { lat: 0, lng: 0 },
                 fullscreenControl: false,
-                mapTypeId: google.maps.MapTypeId.SATELLITE,
-                clickableIcons: false
+                mapTypeId: google.maps.MapTypeId.SATELLITE
             });
-            
+
+            // 초기 줌 레벨 출력
             console.log(`Zoom level: ${map.getZoom()}`);
+
+            // 줌 레벨 변화 감지
             map.addListener("zoom_changed", () => {
                 console.log(`Zoom level: ${map.getZoom()}`);
                 updateMarkers();
             });
-            
+
+            // 초기 마커 설정
             updateMarkers();
-        }
-        
-        // 자산군 필터링 함수
-        function filterByCategory() {
-            const categoryDropdown = document.getElementById("categoryDropdown");
-            selectedCategory = categoryDropdown.value;
-        
-            if (selectedCategory) {
-                filteredAssets = assets.filter(asset => asset.category === selectedCategory);
-            } else {
-                filteredAssets = assets;
-            }
-        
-            const countryDropdown = document.getElementById("countryDropdown");
-            selectedCountry = countryDropdown.value;
-            if (selectedCountry) {
-                filteredAssets = filteredAssets.filter(asset => asset.country === selectedCountry);
-                currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
-            } else {
-                currentCountryAssets = null;
-            }
-        
-            // 조건에 맞는 자산이 없는 경우
-            if (selectedCategory && selectedCountry && filteredAssets.length === 0) {
-                alert("해당 자산이 없습니다.");
-                map.setZoom(2);
-                map.setCenter({ lat: 0, lng: 0 });
-                currentCountryAssets = null;
-            } else if (selectedCategory && !selectedCountry) {
-                // 자산군만 선택된 경우: 기존 중심 유지하면서 경계 조정
-                const bounds = new google.maps.LatLngBounds();
-                filteredAssets.forEach(asset => {
-                    bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
-                });
-        
-                // 현재 지도 중심을 기준으로 새로운 자산군의 경계를 포함하도록 조정
-                const currentCenter = map.getCenter();
-                bounds.extend(currentCenter); // 기존 중심 포함
-                map.panToBounds(bounds); // 부드럽게 경계 조정
-        
-                // 최소/최대 줌 레벨 제한
-                const currentZoom = map.getZoom();
-                if (currentZoom > 10) map.setZoom(10);
-                if (currentZoom < 2) map.setZoom(2);
-            } else if (currentCountryAssets) {
-                moveToAssets();
-            } else {
-                map.setZoom(2);
-                map.setCenter({ lat: 0, lng: 0 });
-            }
-        
-            updateMarkers();
-        }
-        
-        // 마커 업데이트 함수
-        function updateMarkers() {
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];
-            const zoom = map.getZoom();
-            let assetsToShow = filteredAssets;
-            if (currentCountryAssets) {
-                assetsToShow = currentCountryAssets;
-            }
-            
-            if (zoom <= 3) {
-                const filteredAssetsByCountry = assetsToShow.reduce((acc, asset) => {
-                    const country = asset.country;
-                    if (!acc[country]) {
-                        acc[country] = [];
-                    }
-                    acc[country].push(asset);
-                    return acc;
-                }, {});
-                
-                Object.keys(filteredAssetsByCountry).forEach(country => {
-                    const countryAssets = filteredAssetsByCountry[country];
-                    let latSum = 0, lngSum = 0;
-                    countryAssets.forEach(asset => {
-                        latSum += asset.position.lat;
-                        lngSum += asset.position.lng;
+
+            // 마커 업데이트 함수 (전역 변수에 할당하여 initMap 밖에서도 호출 가능하게 함)
+            updateMarkers = function() {
+                // 기존 마커 제거
+                markers.forEach(marker => marker.setMap(null));
+                markers = [];
+
+                const zoom = map.getZoom();
+
+                if (zoom <= 3) {
+                    // 줌 레벨 3 이하: 국가별 마커 표시
+                    Object.keys(assetsByCountry).forEach(country => {
+                        const countryAssets = assetsByCountry[country];
+                        // 국가 중심점 계산 (자산 위치의 평균)
+                        let latSum = 0, lngSum = 0;
+                        countryAssets.forEach(asset => {
+                            latSum += asset.position.lat;
+                            lngSum += asset.position.lng;
+                        });
+                        const center = {
+                            lat: latSum / countryAssets.length,
+                            lng: lngSum / countryAssets.length
+                        };
+
+                        const marker = new google.maps.Marker({
+                            position: center,
+                            map: map,
+                            title: `${country}: ${countryAssets.length}개 자산`,
+                            icon: customMarkerIcon
+                        });
+
+                        marker.addListener("click", () => {
+                            // 팝업 창 표시
+                            showPopup(country, `${country}: ${countryAssets.length}개 자산`, `이 국가에는 ${countryAssets.length}개의 자산이 있습니다.`, `
+                                <button class="move-button" onclick="moveToAssetsWrapper('${country}')">자산 이동</button>
+                            `);
+                        });
+
+                        markers.push(marker);
                     });
-                    const center = {
-                        lat: latSum / countryAssets.length,
-                        lng: lngSum / countryAssets.length
-                    };
-                    
-                    const marker = new google.maps.Marker({
-                        position: center,
-                        map: map,
-                        title: `${country}: ${countryAssets.length}개 자산`,
-                        icon: {
-                            url: getCountryIcon(country),
-                            scaledSize: new google.maps.Size(40, 40)
-                        }
+                } else {
+                    // 줌 레벨 4 이상: 개별 자산 마커 표시
+                    assets.forEach(asset => {
+                        const marker = new google.maps.Marker({
+                            position: asset.position,
+                            map: map,
+                            title: asset.title,
+                            icon: customMarkerIcon
+                        });
+
+                        marker.addListener("click", () => {
+                            // 팝업 창 표시 및 줌 조정 (asset 객체 전달)
+                            showPopup(asset.title, asset.title, asset.description, `
+                                <span class="category-badge category-${categoryClass(asset.category)}">${asset.category}</span>
+                                <p class="established-date">투자/설립시기: ${asset.establishedDate}</p>
+                                <!-- <img src="${asset.logoUrl}" alt="Logo" class="logo"> -->
+                                <img src="${asset.imageUrl}" alt="${asset.title}" class="asset-image">
+                            `, asset);
+                            // 줌 레벨 17로 설정 및 자산 위치 중심
+                            map.setZoom(17);
+                            map.setCenter(asset.position);
+                        });
+
+                        markers.push(marker);
                     });
-                    
-                    marker.addListener("click", () => {
-                        showPopup(country, `${country}: ${countryAssets.length}개 자산`, `이 국가에는 ${countryAssets.length}개의 자산이 있습니다.`, `
-                            <button class="move-button" onclick="moveToAssetsWrapper('${country}')">자산 이동</button>
-                        `);
-                    });
-                    
-                    markers.push(marker);
-                });
-            } else {
-                assetsToShow.forEach(asset => {
-                    const marker = new google.maps.Marker({
-                        position: asset.position,
-                        map: map,
-                        title: asset.title,
-                        icon: {
-                            url: getCountryIcon(asset.country),
-                            scaledSize: new google.maps.Size(40, 40)
-                        }
-                    });
-                
-                    marker.addListener("click", () => {
-                        // imageUrl이 있는 경우에만 이미지 태그 추가
-                        const imageTag = asset.imageUrl ? `<img src="${asset.imageUrl}" alt="${asset.title}" class="asset-image">` : '';
-                        showPopup(asset.title, asset.title, asset.description, `
-                            <p class="established-date">투자/설립시기: ${asset.establishedDate || '정보 없음'}</p>
-                            <!-- <img src="${asset.logoUrl}" alt="Logo" class="logo"> -->
-                            ${imageTag}
-                        `, asset);
-                        map.setZoom(17);
-                        map.setCenter(asset.position);
-                    });
-                
-                    markers.push(marker);
-                });
+                }
             }
         }
-        
-        // 팝업 창 표시 함수
+
+        // 팝업 창 표시 함수 (공통)
         function showPopup(id, title, description, extraContent, asset = null) {
             const popupOverlay = document.getElementById("popupOverlay");
             const popupTitle = document.getElementById("popupTitle");
             const popupDescription = document.getElementById("popupDescription");
             const popupExtra = document.getElementById("popupExtra");
-            
+
+            // 팝업 내용 설정
             popupTitle.textContent = title;
             popupDescription.textContent = description;
             popupExtra.innerHTML = extraContent;
-            
+
+            // 마지막으로 확인한 자산 저장
             if (asset) {
                 lastViewedAsset = asset;
             }
-            
+
+            // 국가 자산 데이터 저장 (국가별 마커 클릭 시)
             if (id in assetsByCountry) {
-                currentCountryAssets = assetsByCountry[id].filter(asset => !selectedCategory || asset.category === selectedCategory);
+                currentCountryAssets = assetsByCountry[id];
             } else {
                 currentCountryAssets = null;
             }
-            
+
+            // 팝업 표시
             popupOverlay.style.display = "block";
         }
-        
+
         // 팝업 창 닫기 함수
         function closePopup() {
             const popupOverlay = document.getElementById("popupOverlay");
             popupOverlay.style.display = "none";
             currentCountryAssets = null;
         }
-        
+
+        // 상단 Global/Local 토글 버튼 활성 상태 갱신
+        function setActiveToggle(activeId) {
+            document.getElementById("globalBtn").classList.toggle("active", activeId === "globalBtn");
+            document.getElementById("localBtn").classList.toggle("active", activeId === "localBtn");
+        }
+
         // 자산으로 이동 함수
         function moveToAssets() {
             if (currentCountryAssets) {
@@ -418,67 +599,41 @@
                     bounds.extend(new google.maps.LatLng(asset.position.lat, asset.position.lng));
                 });
                 map.fitBounds(bounds);
-        
+
+                // 줌 레벨 제한
                 const currentZoom = map.getZoom();
-                if (currentZoom > 10) map.setZoom(10); // 최대 줌 레벨 제한
-                if (currentZoom < 2) map.setZoom(2);   // 최소 줌 레벨 제한
+                if (currentZoom > 10) map.setZoom(10);
+                if (currentZoom < 4) map.setZoom(4);
             }
         }
-        
-        // 자산 이동 래퍼 함수
+
+        // 자산 이동 래퍼 함수 (팝업 창 버튼 클릭 시 호출)
         function moveToAssetsWrapper(country) {
-            currentCountryAssets = assetsByCountry[country].filter(asset => !selectedCategory || asset.category === selectedCategory);
-            if (currentCountryAssets.length === 0) {
-                alert("해당 자산이 없습니다.");
-                map.setZoom(2);
-                map.setCenter({ lat: 0, lng: 0 });
-                currentCountryAssets = null;
-            } else {
-                moveToAssets();
-            }
+            currentCountryAssets = assetsByCountry[country];
+            moveToAssets();
             closePopup();
         }
-        
+
         // 드랍다운에서 국가 선택 시 이동 함수
         function moveToCountry() {
             const countryDropdown = document.getElementById("countryDropdown");
-            selectedCountry = countryDropdown.value;
+            const selectedCountry = countryDropdown.value;
             if (selectedCountry && assetsByCountry[selectedCountry]) {
-                currentCountryAssets = assetsByCountry[selectedCountry].filter(asset => !selectedCategory || asset.category === selectedCategory);
-                filteredAssets = assets.filter(asset => asset.country === selectedCountry && (!selectedCategory || asset.category === selectedCategory));
-                if (filteredAssets.length === 0) {
-                    alert("해당 자산이 없습니다.");
-                    map.setZoom(2);
-                    map.setCenter({ lat: 0, lng: 0 });
-                    currentCountryAssets = null;
-                } else {
-                    moveToAssets();
-                }
-            } else {
-                selectedCountry = "";
-                currentCountryAssets = null;
-                filteredAssets = selectedCategory ? assets.filter(asset => asset.category === selectedCategory) : assets;
-                map.setZoom(2);
-                map.setCenter({ lat: 0, lng: 0 });
+                currentCountryAssets = assetsByCountry[selectedCountry];
+                moveToAssets();
+                countryDropdown.value = "";
+                setActiveToggle("localBtn");
             }
-            updateMarkers();
         }
-        
+
         // Local 버튼 클릭 시 마지막으로 확인한 자산의 국가로 이동
         function moveToLocal() {
             if (lastViewedAsset && lastViewedAsset.country) {
                 const country = lastViewedAsset.country;
                 if (assetsByCountry[country]) {
-                    currentCountryAssets = assetsByCountry[country].filter(asset => !selectedCategory || asset.category === selectedCategory);
-                    filteredAssets = assets.filter(asset => asset.country === country && (!selectedCategory || asset.category === selectedCategory));
-                    if (filteredAssets.length === 0) {
-                        alert("해당 자산이 없습니다.");
-                        map.setZoom(2);
-                        map.setCenter({ lat: 0, lng: 0 });
-                        currentCountryAssets = null;
-                    } else {
-                        moveToAssets();
-                    }
+                    currentCountryAssets = assetsByCountry[country];
+                    moveToAssets();
+                    setActiveToggle("localBtn");
                 } else {
                     alert(`마지막으로 확인한 자산의 국가 (${country})에 해당하는 자산이 없습니다.`);
                 }
@@ -486,28 +641,17 @@
                 alert("아직 확인한 자산이 없습니다. 자산을 클릭해 주세요.");
             }
         }
-        
+
         // Global 버튼 클릭 시 지도 초기 상태로 복원
         function resetMap() {
             map.setZoom(2);
             map.setCenter({ lat: 0, lng: 0 });
-            currentCountryAssets = null;
-            filteredAssets = assets; // 모든 자산 표시
-            document.getElementById("countryDropdown").value = "";
-            document.getElementById("categoryDropdown").value = ""; // 자산군 드랍다운 초기화
-            selectedCountry = "";
-            selectedCategory = "";
             updateMarkers();
+            document.getElementById("countryDropdown").value = "";
+            setActiveToggle("globalBtn");
         }
-        
-        // 팝업 바깥 클릭 시 닫기
-        const popupOverlay = document.getElementById("popupOverlay");
-        popupOverlay.addEventListener("click", function(event) {
-            if (event.target === popupOverlay) {
-                closePopup();
-            }
-        });
     </script>
+
     <!-- Google Maps JavaScript API 로드 -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKZ64N6aTmQLaU312nCqXeyrNa-lol2IQ&callback=initMap&loading=async">
