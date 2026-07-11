@@ -131,28 +131,39 @@
             font-weight: 700;
         }
 
-        #countryDropdown {
+        #localCountrySelect {
             appearance: none;
             -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.08) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%23cbd5e1"/></svg>') no-repeat right 12px center;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 8px;
-            padding: 8px 32px 8px 14px;
+            background: transparent url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%23cbd5e1"/></svg>') no-repeat right 11px center;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 30px 7px 16px;
             font-family: inherit;
             font-size: 13px;
             font-weight: 500;
-            color: var(--white);
+            color: #cbd5e1;
             cursor: pointer;
-            min-width: 120px;
+            min-width: 92px;
         }
 
-        #countryDropdown option {
+        #localCountrySelect:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+            color: var(--white);
+        }
+
+        #localCountrySelect.active {
+            background-color: var(--white);
+            color: var(--navy);
+            font-weight: 700;
+        }
+
+        #localCountrySelect option {
             color: var(--text);
+            background: var(--white);
         }
 
-        #countryDropdown:focus {
+        #localCountrySelect:focus {
             outline: none;
-            border-color: var(--white);
         }
 
         /* 지도 */
@@ -421,11 +432,10 @@
             </div>
             <div class="segmented">
                 <button class="global-button active" id="globalBtn" onclick="resetMap()">Global</button>
-                <button class="local-button" id="localBtn" onclick="moveToLocal()">Local</button>
+                <select id="localCountrySelect" onchange="moveToCountry()" aria-label="국가 선택">
+                    <option value="">Local</option>
+                </select>
             </div>
-            <select id="countryDropdown" onchange="moveToCountry()">
-                <option value="">국가 선택</option>
-            </select>
         </div>
     </header>
 
@@ -574,11 +584,13 @@
             const flagUrl = countryFlags[country];
             if (!flagUrl) return categoryMarkerIcon(""); // 매핑에 없는 국가는 기본 핀으로 대체
             if (!countryIconCache[country]) {
+                // data URI 안의 상대 이미지 경로는 해석되지 않으므로 페이지 기준 절대 URL을 사용한다.
+                const absoluteFlagUrl = new URL(flagUrl, window.location.href).href;
                 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="50" viewBox="0 0 40 50">
                     <path d="M20 0C9 0 0 9 0 20c0 13 20 30 20 30s20-17 20-30C40 9 31 0 20 0z" fill="#16324f"/>
                     <circle cx="20" cy="20" r="15" fill="#ffffff"/>
                     <clipPath id="flagClip"><circle cx="20" cy="20" r="13"/></clipPath>
-                    <image href="${flagUrl}" x="7" y="7" width="26" height="26" clip-path="url(#flagClip)"/>
+                    <image href="${absoluteFlagUrl}" x="7" y="7" width="26" height="26" preserveAspectRatio="xMidYMid slice" clip-path="url(#flagClip)"/>
                 </svg>`;
                 countryIconCache[country] = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
             }
@@ -666,7 +678,7 @@
             showGlobalStats();
 
             // 드랍다운 메뉴에 국가 목록 추가
-            const countryDropdown = document.getElementById("countryDropdown");
+            const countryDropdown = document.getElementById("localCountrySelect");
             Object.keys(assetsByCountry).sort().forEach(country => {
                 const option = document.createElement("option");
                 option.value = country;
@@ -735,6 +747,8 @@
                             currentCountry = country;
                             moveToAssets();
                             showCountryStats(country);
+                            document.getElementById("localCountrySelect").value = country;
+                            setActiveToggle("localBtn");
                         });
 
                         markers.push(marker);
@@ -800,7 +814,7 @@
         // 상단 Global/Local 토글 버튼 활성 상태 갱신
         function setActiveToggle(activeId) {
             document.getElementById("globalBtn").classList.toggle("active", activeId === "globalBtn");
-            document.getElementById("localBtn").classList.toggle("active", activeId === "localBtn");
+            document.getElementById("localCountrySelect").classList.toggle("active", activeId === "localBtn");
         }
 
         // 자산으로 이동 함수
@@ -821,33 +835,14 @@
 
         // 드랍다운에서 국가 선택 시 이동 함수
         function moveToCountry() {
-            const countryDropdown = document.getElementById("countryDropdown");
+            const countryDropdown = document.getElementById("localCountrySelect");
             const selectedCountry = countryDropdown.value;
             if (selectedCountry && assetsByCountry[selectedCountry]) {
                 currentCountryAssets = assetsByCountry[selectedCountry];
                 currentCountry = selectedCountry;
                 moveToAssets();
                 showCountryStats(selectedCountry);
-                countryDropdown.value = "";
                 setActiveToggle("localBtn");
-            }
-        }
-
-        // Local 버튼 클릭 시 마지막으로 확인한 자산의 국가로 이동
-        function moveToLocal() {
-            if (lastViewedAsset && lastViewedAsset.country) {
-                const country = lastViewedAsset.country;
-                if (assetsByCountry[country]) {
-                    currentCountryAssets = assetsByCountry[country];
-                    currentCountry = country;
-                    moveToAssets();
-                    showCountryStats(country);
-                    setActiveToggle("localBtn");
-                } else {
-                    alert(`마지막으로 확인한 자산의 국가 (${country})에 해당하는 자산이 없습니다.`);
-                }
-            } else {
-                alert("아직 확인한 자산이 없습니다. 자산을 클릭해 주세요.");
             }
         }
 
@@ -857,7 +852,7 @@
             map.setCenter({ lat: 0, lng: 0 });
             currentCountry = null;
             updateMarkers();
-            document.getElementById("countryDropdown").value = "";
+            document.getElementById("localCountrySelect").value = "";
             setActiveToggle("globalBtn");
             showGlobalStats();
         }
