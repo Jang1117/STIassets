@@ -557,6 +557,61 @@
             };
         }
 
+        // 자산의 실제 사업 특징을 판별해 개별 마커 심볼을 다르게 표시한다.
+        const assetGlyphs = {
+            wind: `<g fill="none" stroke="{{color}}" stroke-width="1.7" stroke-linecap="round"><circle cx="17" cy="14" r="1.5"/><path d="M17 15.5v10M17 14l6-3M17 14l-5-5M17 14l-4 6"/></g>`,
+            solar: `<g fill="none" stroke="{{color}}" stroke-width="1.5" stroke-linecap="round"><rect x="10" y="14" width="14" height="8" rx="1"/><path d="M13 14l-1 8M17 14v8M21 14l1 8M10 18h14M17 22v3M13 25h8"/></g>`,
+            biomass: `<path fill="{{color}}" d="M24 9c-7 .5-12 4.5-12 10 0 3.2 2.2 5.5 5.2 5.5 5.8 0 7.2-7.7 6.8-15.5zM12 25c2.2-5.2 5.3-8.3 9.5-11-3.2 3.7-5.3 7.6-6.2 12z"/>`,
+            plant: `<g fill="{{color}}"><path d="M9 24V14l5 3v-4l5 3v-6h5v14z"/><rect x="11" y="20" width="2" height="2" fill="#fff"/><rect x="16" y="20" width="2" height="2" fill="#fff"/><rect x="21" y="19" width="2" height="3" fill="#fff"/></g>`,
+            mine: `<g fill="none" stroke="{{color}}" stroke-width="1.8" stroke-linecap="round"><path d="M10 24l6-13M12 10l9 5M20 11l-7 14M9 24h16"/></g>`,
+            truck: `<g fill="none" stroke="{{color}}" stroke-width="1.7" stroke-linejoin="round"><path d="M9 14h10v8H9zM19 17h4l3 3v2h-7z"/><circle cx="13" cy="24" r="2"/><circle cx="22" cy="24" r="2"/></g>`,
+            ship: `<g fill="none" stroke="{{color}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19h16l-3 6H12zM13 19v-6h8v6M17 13V9M17 9h5"/></g>`,
+            palm: `<g fill="none" stroke="{{color}}" stroke-width="1.7" stroke-linecap="round"><path d="M17 14c-2 4-2 8-1 12M17 14c-4-4-7-3-8-1M17 14c-1-5 2-7 4-7M17 14c4-3 7-1 8 1M17 14c3 1 4 4 4 6"/></g>`,
+            gas: `<path fill="{{color}}" d="M18 7c1 5-4 6-4 10 0 2 1 3 2 4-3-1-4-3-4-5-3 3-4 6-3 9 1 4 4 6 8 6s8-3 8-8c0-6-4-10-7-16zm0 20c-2 0-3-1-3-3 0-1 1-3 3-5 0 3 3 3 3 6 0 1-1 2-3 2z" transform="translate(0 -2) scale(.95)"/>`,
+            golf: `<g fill="none" stroke="{{color}}" stroke-width="1.7" stroke-linecap="round"><path d="M13 25V9l9 3-9 3M9 25h10"/><circle cx="23" cy="23" r="2" fill="{{color}}"/></g>`,
+            hotel: `<g fill="none" stroke="{{color}}" stroke-width="1.6"><path d="M10 24V10h14v14M14 24v-4h6v4"/><path d="M13 14h2M19 14h2M13 17h2M19 17h2"/></g>`
+        };
+
+        function getAssetType(asset) {
+            const text = `${asset.title} ${asset.description}`.toLowerCase();
+            if (/palm oil|팜오일|농장|plantation/.test(text)) return "palm";
+            if (/천연가스|\blpg\b|condensate|\bgas\b/.test(text)) return "gas";
+            if (/apex clean energy/.test(text)) return "solar";
+            if (/풍력|wind/.test(text)) return "wind";
+            if (/태양광|solar|\bess\b/.test(text)) return "solar";
+            if (/바이오매스|biomass/.test(text)) return "biomass";
+            if (/골프|golf/.test(text)) return "golf";
+            if (/호텔|리조트|hotel|sofitel/.test(text)) return "hotel";
+            if (/해상운송|shipping|barge|sea bridge|alur biru/.test(text)) return "ship";
+            if (/내륙운송|운반 트럭|trasindo|suk|truck/.test(text)) return "truck";
+            if (/광산|광업|채굴|석탄광|kideco|samindo|mintec|transkon/.test(text)) return "mine";
+            if (/발전소|power|electric/.test(text)) return "plant";
+            return null;
+        }
+
+        const assetIconCache = {};
+        function assetMarkerIcon(asset) {
+            const type = getAssetType(asset);
+            if (!type || !assetGlyphs[type]) return categoryMarkerIcon(asset.category);
+            const slug = categoryClass(asset.category);
+            const cacheKey = `${slug}-${type}`;
+            if (!assetIconCache[cacheKey]) {
+                const color = categoryColors[slug];
+                const glyph = assetGlyphs[type].replace(/\{\{color\}\}/g, color);
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
+                    <path d="M17 0C7.6 0 0 7.6 0 17c0 11 17 27 17 27s17-16 17-27C34 7.6 26.4 0 17 0z" fill="${color}"/>
+                    <circle cx="17" cy="17" r="10.5" fill="#ffffff"/>
+                    ${glyph}
+                </svg>`;
+                assetIconCache[cacheKey] = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+            }
+            return {
+                url: assetIconCache[cacheKey],
+                scaledSize: new google.maps.Size(34, 44),
+                anchor: new google.maps.Point(17, 44)
+            };
+        }
+
         // 상단 필터 바에 쓰이는 원형 칩 아이콘 (핀 꼬리 없이 원 안 글리프만)
         function categoryChipSvgMarkup(slug) {
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 26 26">
@@ -765,7 +820,7 @@
                             position: asset.position,
                             map: map,
                             title: asset.title,
-                            icon: categoryMarkerIcon(asset.category)
+                            icon: assetMarkerIcon(asset)
                         });
 
                         marker.addListener("click", () => {
