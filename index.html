@@ -466,6 +466,7 @@
         let map;
         let markers = [];
         let currentCountryAssets = null;
+        let currentCountry = null; // 현재 로컬로 보고 있는 국가 (null이면 글로벌 상태)
         let assetsByCountry = null;
         let lastViewedAsset = null; // 마지막으로 확인한 자산 저장
         let updateMarkers = () => {}; // initMap에서 실제 구현이 할당됨 (전역에서도 호출 가능하도록)
@@ -573,6 +574,15 @@
                 el.classList.toggle("active", el.dataset.filter === slug);
             });
             updateMarkers();
+
+            // 로컬(국가) 상태에서 필터링하면, 그 국가의 필터링된 자산이 한눈에 보이도록 줌 재조정
+            if (currentCountry) {
+                const countryFilteredAssets = getFilteredAssets().filter(asset => asset.country === currentCountry);
+                if (countryFilteredAssets.length > 0) {
+                    currentCountryAssets = countryFilteredAssets;
+                    moveToAssets();
+                }
+            }
         }
 
         // 카테고리별 자산 개수 집계 (하단 패널 표시용)
@@ -699,6 +709,7 @@
                         // 국가 마커 클릭 시 팝업 없이 바로 해당 국가 자산으로 이동 + 하단 패널 갱신
                         marker.addListener("click", () => {
                             currentCountryAssets = countryAssets;
+                            currentCountry = country;
                             moveToAssets();
                             showCountryStats(country);
                         });
@@ -791,6 +802,7 @@
             const selectedCountry = countryDropdown.value;
             if (selectedCountry && assetsByCountry[selectedCountry]) {
                 currentCountryAssets = assetsByCountry[selectedCountry];
+                currentCountry = selectedCountry;
                 moveToAssets();
                 showCountryStats(selectedCountry);
                 countryDropdown.value = "";
@@ -804,6 +816,7 @@
                 const country = lastViewedAsset.country;
                 if (assetsByCountry[country]) {
                     currentCountryAssets = assetsByCountry[country];
+                    currentCountry = country;
                     moveToAssets();
                     showCountryStats(country);
                     setActiveToggle("localBtn");
@@ -819,6 +832,7 @@
         function resetMap() {
             map.setZoom(2);
             map.setCenter({ lat: 0, lng: 0 });
+            currentCountry = null;
             updateMarkers();
             document.getElementById("countryDropdown").value = "";
             setActiveToggle("globalBtn");
