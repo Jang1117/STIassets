@@ -615,18 +615,19 @@
             updateMarkers();
         }
 
-        // 국가별 중심을 동일한 비중으로 반영하고, 날짜변경선 부근도 자연스럽게 처리한다.
+        // 전체 진출 국가의 위·경도 범위 중간값으로 아프리카 중심의 글로벌 화면을 만든다.
         function getGlobalAssetCenter(groupedAssets) {
             const countryCenters = Object.values(groupedAssets).map(countryAssets => ({
                 lat: countryAssets.reduce((sum, asset) => sum + asset.position.lat, 0) / countryAssets.length,
                 lng: countryAssets.reduce((sum, asset) => sum + asset.position.lng, 0) / countryAssets.length
             }));
 
-            const lat = countryCenters.reduce((sum, center) => sum + center.lat, 0) / countryCenters.length;
-            const sinSum = countryCenters.reduce((sum, center) => sum + Math.sin(center.lng * Math.PI / 180), 0);
-            const cosSum = countryCenters.reduce((sum, center) => sum + Math.cos(center.lng * Math.PI / 180), 0);
-            const lng = Math.atan2(sinSum, cosSum) * 180 / Math.PI;
-            return { lat, lng };
+            const lats = countryCenters.map(center => center.lat);
+            const lngs = countryCenters.map(center => center.lng);
+            return {
+                lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+                lng: (Math.min(...lngs) + Math.max(...lngs)) / 2
+            };
         }
 
         // 카테고리별 자산 개수 집계 (하단 패널 표시용)
