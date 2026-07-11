@@ -479,9 +479,6 @@
                 updateMarkers();
             });
 
-            // 초기 마커 설정
-            updateMarkers();
-
             // 마커 업데이트 함수 (전역 변수에 할당하여 initMap 밖에서도 호출 가능하게 함)
             updateMarkers = function() {
                 // 기존 마커 제거
@@ -547,7 +544,10 @@
                         markers.push(marker);
                     });
                 }
-            }
+            };
+
+            // 초기 마커 설정
+            updateMarkers();
         }
 
         // 팝업 창 표시 함수 (공통)
