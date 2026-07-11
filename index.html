@@ -167,14 +167,14 @@
         /* 범례 / 통계 패널 */
         .legend-panel {
             position: fixed;
-            left: 20px;
+            right: 20px;
             bottom: 24px;
             z-index: 900;
             background: rgba(255, 255, 255, 0.97);
             border-radius: 12px;
             box-shadow: var(--shadow-md);
             padding: 16px 18px;
-            min-width: 200px;
+            min-width: 220px;
             font-size: 13px;
         }
 
@@ -207,7 +207,7 @@
         .legend-categories {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 2px;
         }
 
         .legend-item {
@@ -216,6 +216,7 @@
             gap: 8px;
             color: var(--text);
             font-weight: 500;
+            padding: 4px 0;
         }
 
         .legend-item .dot {
@@ -225,9 +226,67 @@
             flex-shrink: 0;
         }
 
+        .legend-item b {
+            margin-left: auto;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .dot-all { background: var(--navy); }
         .dot-realestate { background: var(--slate); }
         .dot-renewable { background: var(--green); }
         .dot-resource { background: var(--amber); }
+
+        /* 상단 카테고리 필터 바 */
+        .category-filter-bar {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .category-chip-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            color: #cbd5e1;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .category-chip-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--white);
+        }
+
+        .category-chip-btn.active {
+            background: var(--white);
+            color: var(--navy);
+            font-weight: 700;
+        }
+
+        .chip-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            display: flex;
+        }
+
+        .chip-icon svg {
+            width: 100%;
+            height: 100%;
+        }
 
         /* 카테고리 배지 */
         .category-badge {
@@ -325,23 +384,6 @@
             color: var(--text);
         }
 
-        .popup-content .move-button {
-            background-color: var(--navy);
-            color: var(--white);
-            border: none;
-            padding: 9px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 600;
-            transition: background 0.15s ease;
-        }
-
-        .popup-content .move-button:hover {
-            background-color: var(--navy-light);
-        }
-
         .popup-content img.asset-image {
             max-width: 100%;
             width: 100%;
@@ -363,6 +405,20 @@
             </div>
         </div>
         <div class="topbar-controls">
+            <div class="category-filter-bar" id="categoryFilterBar">
+                <button class="category-chip-btn active" data-filter="all" onclick="setCategoryFilter('all')">
+                    <span class="chip-icon"></span>전체
+                </button>
+                <button class="category-chip-btn" data-filter="realestate" onclick="setCategoryFilter('realestate')">
+                    <span class="chip-icon"></span>부동산 자산관리
+                </button>
+                <button class="category-chip-btn" data-filter="renewable" onclick="setCategoryFilter('renewable')">
+                    <span class="chip-icon"></span>신재생에너지
+                </button>
+                <button class="category-chip-btn" data-filter="resource" onclick="setCategoryFilter('resource')">
+                    <span class="chip-icon"></span>자원/에너지인프라
+                </button>
+            </div>
             <div class="segmented">
                 <button class="global-button active" id="globalBtn" onclick="resetMap()">Global</button>
                 <button class="local-button" id="localBtn" onclick="moveToLocal()">Local</button>
@@ -379,17 +435,17 @@
         <div class="legend-stats">
             <div class="stat">
                 <strong id="statTotal">0</strong>
-                <span>총 자산</span>
+                <span id="statTotalLabel">총 자산</span>
             </div>
             <div class="stat">
-                <strong id="statCountries">0</strong>
-                <span>진출 국가</span>
+                <strong id="statScope">0</strong>
+                <span id="statScopeLabel">진출 국가</span>
             </div>
         </div>
         <div class="legend-categories">
-            <div class="legend-item"><span class="dot dot-realestate"></span>부동산 자산관리</div>
-            <div class="legend-item"><span class="dot dot-renewable"></span>신재생에너지</div>
-            <div class="legend-item"><span class="dot dot-resource"></span>자원/에너지인프라</div>
+            <div class="legend-item"><span class="dot dot-realestate"></span>부동산 자산관리<b id="countRealestate">0</b></div>
+            <div class="legend-item"><span class="dot dot-renewable"></span>신재생에너지<b id="countRenewable">0</b></div>
+            <div class="legend-item"><span class="dot dot-resource"></span>자원/에너지인프라<b id="countResource">0</b></div>
         </div>
     </div>
 
@@ -421,8 +477,132 @@
             "자원/에너지인프라": "resource"
         };
 
+        // 필터 슬러그 -> 카테고리 (역매핑)
+        const slugToCategory = {};
+        Object.entries(categoryClassMap).forEach(([category, slug]) => {
+            slugToCategory[slug] = category;
+        });
+
         function categoryClass(category) {
             return categoryClassMap[category] || "realestate";
+        }
+
+        // 카테고리별 색상 및 마커 글리프 (지도 위 아이콘 구분용)
+        const categoryColors = {
+            all: "#16324f",
+            realestate: "#64748b",
+            renewable: "#16a34a",
+            resource: "#d97706"
+        };
+
+        const categoryGlyphs = {
+            all: `<g fill="{{color}}">
+                <rect x="10" y="10" width="6" height="6"/>
+                <rect x="18" y="10" width="6" height="6"/>
+                <rect x="10" y="18" width="6" height="6"/>
+                <rect x="18" y="18" width="6" height="6"/>
+            </g>`,
+            realestate: `<g fill="none" stroke="{{color}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="11" y="12" width="6" height="10"/>
+                <rect x="18" y="9" width="6" height="13"/>
+                <line x1="13" y1="15" x2="15" y2="15"/>
+                <line x1="13" y1="18" x2="15" y2="18"/>
+                <line x1="20" y1="12" x2="22" y2="12"/>
+                <line x1="20" y1="15" x2="22" y2="15"/>
+                <line x1="20" y1="18" x2="22" y2="18"/>
+            </g>`,
+            renewable: `<g stroke="{{color}}" stroke-width="1.7" stroke-linecap="round">
+                <line x1="17" y1="11" x2="17" y2="24"/>
+                <line x1="17" y1="11" x2="23" y2="9"/>
+                <line x1="17" y1="11" x2="12" y2="7"/>
+                <line x1="17" y1="11" x2="14" y2="16"/>
+            </g>`,
+            resource: `<path fill="{{color}}" d="M18.5 8L11 19h5.2l-1.7 8L23 15h-5.3z"/>`
+        };
+
+        function glyphMarkup(slug) {
+            const color = categoryColors[slug];
+            return categoryGlyphs[slug].replace(/\{\{color\}\}/g, color);
+        }
+
+        // 카테고리별 핀 아이콘을 SVG data URI로 생성 (지도 마커용)
+        const categoryIconCache = {};
+        function categoryMarkerIcon(category) {
+            const slug = categoryClass(category);
+            if (!categoryIconCache[slug]) {
+                const color = categoryColors[slug];
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
+                    <path d="M17 0C7.6 0 0 7.6 0 17c0 11 17 27 17 27s17-16 17-27C34 7.6 26.4 0 17 0z" fill="${color}"/>
+                    <circle cx="17" cy="17" r="10.5" fill="#ffffff"/>
+                    ${glyphMarkup(slug)}
+                </svg>`;
+                categoryIconCache[slug] = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+            }
+            return {
+                url: categoryIconCache[slug],
+                scaledSize: new google.maps.Size(34, 44),
+                anchor: new google.maps.Point(17, 44)
+            };
+        }
+
+        // 상단 필터 바에 쓰이는 원형 칩 아이콘 (핀 꼬리 없이 원 안 글리프만)
+        function categoryChipSvgMarkup(slug) {
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 26 26">
+                <circle cx="17" cy="17" r="13" fill="#ffffff"/>
+                ${glyphMarkup(slug)}
+            </svg>`;
+        }
+
+        // 상단 카테고리 필터 버튼에 아이콘 채우기 (Google Maps 로드를 기다릴 필요 없음)
+        document.querySelectorAll(".category-chip-btn").forEach(btn => {
+            const slot = btn.querySelector(".chip-icon");
+            if (slot) slot.innerHTML = categoryChipSvgMarkup(btn.dataset.filter);
+        });
+
+        // 현재 선택된 카테고리 필터 (null = 전체)
+        let activeCategoryFilter = null;
+
+        function getFilteredAssets() {
+            if (!activeCategoryFilter) return assets;
+            return assets.filter(asset => asset.category === activeCategoryFilter);
+        }
+
+        function setCategoryFilter(slug) {
+            activeCategoryFilter = slug === "all" ? null : slugToCategory[slug];
+            document.querySelectorAll(".category-chip-btn").forEach(el => {
+                el.classList.toggle("active", el.dataset.filter === slug);
+            });
+            updateMarkers();
+        }
+
+        // 카테고리별 자산 개수 집계 (하단 패널 표시용)
+        function renderCategoryCounts(assetList) {
+            const counts = { realestate: 0, renewable: 0, resource: 0 };
+            assetList.forEach(asset => {
+                counts[categoryClass(asset.category)]++;
+            });
+            document.getElementById("countRealestate").textContent = counts.realestate;
+            document.getElementById("countRenewable").textContent = counts.renewable;
+            document.getElementById("countResource").textContent = counts.resource;
+        }
+
+        // 하단 패널을 전체(글로벌) 통계로 표시
+        function showGlobalStats() {
+            document.getElementById("statTotal").textContent = assets.length;
+            document.getElementById("statTotalLabel").textContent = "총 자산";
+            document.getElementById("statScope").textContent = Object.keys(assetsByCountry).length;
+            document.getElementById("statScopeLabel").textContent = "진출 국가";
+            renderCategoryCounts(assets);
+        }
+
+        // 하단 패널을 선택한 국가 기준 통계로 표시
+        function showCountryStats(country) {
+            const countryAssets = assetsByCountry[country] || [];
+            document.getElementById("statTotal").textContent = countryAssets.length;
+            document.getElementById("statTotalLabel").textContent = "자산 수";
+            document.getElementById("statScope").textContent = country;
+            document.getElementById("statScopeLabel").textContent = "선택 국가";
+            renderCategoryCounts(countryAssets);
         }
 
         // 지도 초기화 함수
@@ -449,9 +629,8 @@
                 return acc;
             }, {});
 
-            // 통계 패널 업데이트
-            document.getElementById("statTotal").textContent = assets.length;
-            document.getElementById("statCountries").textContent = Object.keys(assetsByCountry).length;
+            // 통계 패널 업데이트 (전체 기준)
+            showGlobalStats();
 
             // 드랍다운 메뉴에 국가 목록 추가
             const countryDropdown = document.getElementById("countryDropdown");
@@ -486,11 +665,19 @@
                 markers = [];
 
                 const zoom = map.getZoom();
+                const filteredAssets = getFilteredAssets();
 
                 if (zoom <= 3) {
-                    // 줌 레벨 3 이하: 국가별 마커 표시
-                    Object.keys(assetsByCountry).forEach(country => {
-                        const countryAssets = assetsByCountry[country];
+                    // 줌 레벨 3 이하: 국가별 마커 표시 (필터 적용된 자산 기준)
+                    const filteredByCountry = filteredAssets.reduce((acc, asset) => {
+                        const country = asset.country;
+                        if (!acc[country]) acc[country] = [];
+                        acc[country].push(asset);
+                        return acc;
+                    }, {});
+
+                    Object.keys(filteredByCountry).forEach(country => {
+                        const countryAssets = filteredByCountry[country];
                         // 국가 중심점 계산 (자산 위치의 평균)
                         let latSum = 0, lngSum = 0;
                         countryAssets.forEach(asset => {
@@ -505,32 +692,32 @@
                         const marker = new google.maps.Marker({
                             position: center,
                             map: map,
-                            title: `${country}: ${countryAssets.length}개 자산`,
-                            icon: customMarkerIcon
+                            title: country,
+                            icon: activeCategoryFilter ? categoryMarkerIcon(activeCategoryFilter) : customMarkerIcon
                         });
 
+                        // 국가 마커 클릭 시 팝업 없이 바로 해당 국가 자산으로 이동 + 하단 패널 갱신
                         marker.addListener("click", () => {
-                            // 팝업 창 표시
-                            showPopup(country, `${country}: ${countryAssets.length}개 자산`, `이 국가에는 ${countryAssets.length}개의 자산이 있습니다.`, `
-                                <button class="move-button" onclick="moveToAssetsWrapper('${country}')">자산 이동</button>
-                            `);
+                            currentCountryAssets = countryAssets;
+                            moveToAssets();
+                            showCountryStats(country);
                         });
 
                         markers.push(marker);
                     });
                 } else {
-                    // 줌 레벨 4 이상: 개별 자산 마커 표시
-                    assets.forEach(asset => {
+                    // 줌 레벨 4 이상: 개별 자산 마커 표시 (카테고리별 아이콘)
+                    filteredAssets.forEach(asset => {
                         const marker = new google.maps.Marker({
                             position: asset.position,
                             map: map,
                             title: asset.title,
-                            icon: customMarkerIcon
+                            icon: categoryMarkerIcon(asset.category)
                         });
 
                         marker.addListener("click", () => {
                             // 팝업 창 표시 및 줌 조정 (asset 객체 전달)
-                            showPopup(asset.title, asset.title, asset.description, `
+                            showPopup(asset.title, asset.description, `
                                 <span class="category-badge category-${categoryClass(asset.category)}">${asset.category}</span>
                                 <p class="established-date">투자/설립시기: ${asset.establishedDate}</p>
                                 <!-- <img src="${asset.logoUrl}" alt="Logo" class="logo"> -->
@@ -550,8 +737,8 @@
             updateMarkers();
         }
 
-        // 팝업 창 표시 함수 (공통)
-        function showPopup(id, title, description, extraContent, asset = null) {
+        // 팝업 창 표시 함수 (개별 자산용)
+        function showPopup(title, description, extraContent, asset = null) {
             const popupOverlay = document.getElementById("popupOverlay");
             const popupTitle = document.getElementById("popupTitle");
             const popupDescription = document.getElementById("popupDescription");
@@ -567,22 +754,13 @@
                 lastViewedAsset = asset;
             }
 
-            // 국가 자산 데이터 저장 (국가별 마커 클릭 시)
-            if (id in assetsByCountry) {
-                currentCountryAssets = assetsByCountry[id];
-            } else {
-                currentCountryAssets = null;
-            }
-
             // 팝업 표시
             popupOverlay.style.display = "block";
         }
 
         // 팝업 창 닫기 함수
         function closePopup() {
-            const popupOverlay = document.getElementById("popupOverlay");
-            popupOverlay.style.display = "none";
-            currentCountryAssets = null;
+            document.getElementById("popupOverlay").style.display = "none";
         }
 
         // 상단 Global/Local 토글 버튼 활성 상태 갱신
@@ -607,13 +785,6 @@
             }
         }
 
-        // 자산 이동 래퍼 함수 (팝업 창 버튼 클릭 시 호출)
-        function moveToAssetsWrapper(country) {
-            currentCountryAssets = assetsByCountry[country];
-            moveToAssets();
-            closePopup();
-        }
-
         // 드랍다운에서 국가 선택 시 이동 함수
         function moveToCountry() {
             const countryDropdown = document.getElementById("countryDropdown");
@@ -621,6 +792,7 @@
             if (selectedCountry && assetsByCountry[selectedCountry]) {
                 currentCountryAssets = assetsByCountry[selectedCountry];
                 moveToAssets();
+                showCountryStats(selectedCountry);
                 countryDropdown.value = "";
                 setActiveToggle("localBtn");
             }
@@ -633,6 +805,7 @@
                 if (assetsByCountry[country]) {
                     currentCountryAssets = assetsByCountry[country];
                     moveToAssets();
+                    showCountryStats(country);
                     setActiveToggle("localBtn");
                 } else {
                     alert(`마지막으로 확인한 자산의 국가 (${country})에 해당하는 자산이 없습니다.`);
@@ -649,6 +822,7 @@
             updateMarkers();
             document.getElementById("countryDropdown").value = "";
             setActiveToggle("globalBtn");
+            showGlobalStats();
         }
     </script>
 
