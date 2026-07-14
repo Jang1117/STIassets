@@ -101,71 +101,49 @@
             flex-shrink: 0;
         }
 
-        .segmented {
+        /* 국가별 마커 칩 (구 Global/Local 컨트롤 자리) */
+        .country-bar {
             display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .country-chip-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 8px;
-            padding: 3px;
-        }
-
-        .global-button, .local-button {
-            background: transparent;
-            border: none;
-            border-radius: 6px;
-            padding: 7px 16px;
+            border-radius: 999px;
+            padding: 5px 12px 5px 6px;
             font-family: inherit;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             color: #cbd5e1;
             cursor: pointer;
-            transition: background 0.15s ease, color 0.15s ease;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
 
-        .global-button:hover, .local-button:hover {
-            background: rgba(255, 255, 255, 0.12);
+        .country-chip-btn:hover {
+            background: rgba(255, 255, 255, 0.16);
             color: var(--white);
         }
 
-        .global-button.active, .local-button.active {
+        .country-chip-btn.active {
             background: var(--white);
             color: var(--navy);
+            border-color: var(--white);
             font-weight: 700;
         }
 
-        #localCountrySelect {
-            appearance: none;
-            -webkit-appearance: none;
-            background: transparent url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%23cbd5e1"/></svg>') no-repeat right 11px center;
-            border: none;
-            border-radius: 6px;
-            padding: 7px 30px 7px 16px;
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 500;
-            color: #cbd5e1;
-            cursor: pointer;
-            min-width: 92px;
-        }
-
-        #localCountrySelect:hover {
-            background-color: rgba(255, 255, 255, 0.12);
-            color: var(--white);
-        }
-
-        #localCountrySelect.active {
-            background-color: var(--white);
-            color: var(--navy);
-            font-weight: 700;
-        }
-
-        #localCountrySelect option {
-            color: var(--text);
-            background: var(--white);
-        }
-
-        #localCountrySelect:focus {
-            outline: none;
+        .country-chip-flag {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
         }
 
         /* 지도 */
@@ -593,12 +571,7 @@
         </div>
         <div class="subtype-bar" id="subtypeBar"></div>
         <div class="topbar-controls">
-            <div class="segmented">
-                <button class="global-button active" id="globalBtn" onclick="resetMap()">Global</button>
-                <select id="localCountrySelect" onchange="moveToCountry()" aria-label="국가 선택">
-                    <option value="">Local</option>
-                </select>
-            </div>
+            <div class="country-bar" id="countryBar"></div>
         </div>
     </header>
 
@@ -946,6 +919,36 @@
             };
         }
 
+        // 상단 우측 국가별 마커(칩) 렌더링 — 클릭하면 해당 국가로 바로 이동
+        function renderCountryBar() {
+            const bar = document.getElementById("countryBar");
+            if (!bar) return;
+            const countries = [...new Set(assets.map(asset => asset.country))].sort();
+            bar.innerHTML = countries.map(country => `
+                <button class="country-chip-btn" data-country="${country}" onclick="focusCountry('${country}')">
+                    <img class="country-chip-flag" src="${countryFlags[country] || ""}" alt="">${country}
+                </button>
+            `).join("");
+        }
+        renderCountryBar();
+
+        function highlightActiveCountry() {
+            document.querySelectorAll(".country-chip-btn").forEach(el => {
+                el.classList.toggle("active", el.dataset.country === currentCountry);
+            });
+        }
+
+        // 국가 칩 클릭: 현재 필터가 적용된 상태로 해당 국가의 자산으로 확대 이동
+        function focusCountry(country) {
+            if (!map || !assetsByCountry || !assetsByCountry[country]) return;
+            currentCountry = country;
+            const filteredInCountry = getFilteredAssets().filter(asset => asset.country === country);
+            currentCountryAssets = filteredInCountry.length > 0 ? filteredInCountry : assetsByCountry[country];
+            moveToAssets();
+            showCountryStats(country);
+            highlightActiveCountry();
+        }
+
         // 현재 선택된 카테고리 필터 (null = 전체) / 자산 유형 필터 (null = 해당 카테고리 전체 유형)
         let activeCategoryFilter = null;
         let activeTypeFilter = null;
@@ -967,14 +970,14 @@
                 el.classList.toggle("active", activeTypeFilter !== null && el.dataset.category === categoryClass(activeCategoryFilter) && el.dataset.type === activeTypeFilter);
             });
 
-            // 로컬(국가) 상태에서 필터링하면, 그 국가의 필터링된 자산이 한눈에 보이도록 줌 재조정
-            if (currentCountry) {
-                const countryFilteredAssets = getFilteredAssets().filter(asset => asset.country === currentCountry);
-                if (countryFilteredAssets.length > 0) {
-                    currentCountryAssets = countryFilteredAssets;
-                    moveToAssets();
-                }
+            // 상단 카테고리/유형 필터를 클릭하면 국가 선택과 관계없이 항상 글로벌 자산을 보여준다.
+            currentCountry = null;
+            currentCountryAssets = null;
+            if (map && assetsByCountry) {
+                map.moveCamera({ center: getGlobalAssetCenter(assetsByCountry), zoom: 3 });
+                showGlobalStats();
             }
+            highlightActiveCountry();
             updateMarkers();
             renderResultsPanel();
         }
@@ -1065,15 +1068,6 @@
             // 통계 패널 업데이트 (전체 기준)
             showGlobalStats();
 
-            // 드랍다운 메뉴에 국가 목록 추가
-            const countryDropdown = document.getElementById("localCountrySelect");
-            Object.keys(assetsByCountry).sort().forEach(country => {
-                const option = document.createElement("option");
-                option.value = country;
-                option.textContent = country;
-                countryDropdown.appendChild(option);
-            });
-
             // 실제 진출 국가들의 위치 분포를 기준으로 첫 화면 중심 설정
             const globalCenter = getGlobalAssetCenter(assetsByCountry);
             map = new google.maps.Map(document.getElementById("map"), {
@@ -1138,8 +1132,7 @@
                             currentCountry = country;
                             moveToAssets();
                             showCountryStats(country);
-                            document.getElementById("localCountrySelect").value = country;
-                            setActiveToggle("localBtn");
+                            highlightActiveCountry();
                         });
 
                         markers.push(marker);
@@ -1202,12 +1195,6 @@
             document.getElementById("popupOverlay").style.display = "none";
         }
 
-        // 상단 Global/Local 토글 버튼 활성 상태 갱신
-        function setActiveToggle(activeId) {
-            document.getElementById("globalBtn").classList.toggle("active", activeId === "globalBtn");
-            document.getElementById("localCountrySelect").classList.toggle("active", activeId === "localBtn");
-        }
-
         // 자산으로 이동 함수
         function moveToAssets() {
             if (!currentCountryAssets || currentCountryAssets.length === 0) return;
@@ -1239,28 +1226,6 @@
             map.moveCamera({ center, zoom });
         }
 
-        // 드랍다운에서 국가 선택 시 이동 함수
-        function moveToCountry() {
-            const countryDropdown = document.getElementById("localCountrySelect");
-            const selectedCountry = countryDropdown.value;
-            if (selectedCountry && assetsByCountry[selectedCountry]) {
-                currentCountryAssets = assetsByCountry[selectedCountry];
-                currentCountry = selectedCountry;
-                moveToAssets();
-                showCountryStats(selectedCountry);
-                setActiveToggle("localBtn");
-            }
-        }
-
-        // Global 버튼 클릭 시 지도 초기 상태로 복원
-        function resetMap() {
-            map.moveCamera({ center: getGlobalAssetCenter(assetsByCountry), zoom: 3 });
-            currentCountry = null;
-            updateMarkers();
-            document.getElementById("localCountrySelect").value = "";
-            setActiveToggle("globalBtn");
-            showGlobalStats();
-        }
     </script>
 
     <!-- Google Maps JavaScript API 로드 -->
