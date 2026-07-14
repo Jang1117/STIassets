@@ -785,6 +785,9 @@
             default: "기타"
         };
 
+        // 서브필터 칩 정렬 순서 (typeLabels 키 순서를 그대로 사용: ...가스, 골프, 호텔·리조트, 기타)
+        const typeOrder = Object.keys(typeLabels);
+
         // 카테고리(슬러그)별로 실제 존재하는 자산 유형을 자산 데이터에서 직접 집계
         function buildCategoryTypes() {
             const result = {};
@@ -793,6 +796,9 @@
                 const type = getAssetType(asset) || "default";
                 if (!result[slug]) result[slug] = [];
                 if (!result[slug].includes(type)) result[slug].push(type);
+            });
+            Object.keys(result).forEach(slug => {
+                result[slug].sort((a, b) => typeOrder.indexOf(a) - typeOrder.indexOf(b));
             });
             return result;
         }
