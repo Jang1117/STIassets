@@ -881,10 +881,25 @@
                 : `<div class="results-panel-empty">해당하는 자산이 없습니다.</div>`;
 
             panel.style.display = "flex";
+            setResultsPanelOpen(true);
         }
 
         function closeResultsPanel() {
             document.getElementById("resultsPanel").style.display = "none";
+            setResultsPanelOpen(false);
+        }
+
+        // 결과 목록 패널이 열려 있는 동안 지도 폭을 줄여, 패널이 지도 위 마커를 가리지 않고
+        // 그 옆(비어 있는 영역)에 놓이도록 한다. 패널을 닫으면 지도가 다시 전체 폭을 차지한다.
+        const RESULTS_PANEL_RESERVED_WIDTH = 320; // 패널 300px + 여백 20px
+        function setResultsPanelOpen(isOpen) {
+            const mapEl = document.getElementById("map");
+            if (mapEl) {
+                mapEl.style.width = isOpen ? `calc(100% - ${RESULTS_PANEL_RESERVED_WIDTH}px)` : "100%";
+            }
+            if (map && window.google) {
+                google.maps.event.trigger(map, "resize");
+            }
         }
 
         // 목록에서 자산을 클릭하면 지도에서 해당 위치로 이동하고 팝업을 띄운다.
@@ -929,6 +944,8 @@
                     <img class="country-chip-flag" src="${countryFlags[country] || ""}" alt="">${country}
                 </button>
             `).join("");
+            // 국가 칩이 추가되면 topbar 실제 높이가 달라질 수 있으므로 다시 측정해 반영한다.
+            syncTopbarHeight();
         }
         renderCountryBar();
 
