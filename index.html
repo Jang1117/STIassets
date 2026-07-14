@@ -452,13 +452,15 @@
             display: block;
         }
 
-        /* 상단 마커/카테고리 칩 클릭 시 해당 자산 목록을 모아 보여주는 패널 */
+        /* 상단 마커/카테고리 칩 클릭 시 해당 자산 목록을 모아 보여주는 패널.
+           좌하단 통계 패널(.legend-panel) 바로 위에 쌓이도록 위치하며, 정확한 bottom 값은
+           JS(syncLegendPanelOffset)가 통계 패널의 실제 높이를 측정해 지정한다. */
         .results-panel {
             position: fixed;
-            right: 20px;
-            bottom: 24px;
+            left: 20px;
+            bottom: 210px;
             width: 300px;
-            max-height: 50vh;
+            max-height: 40vh;
             background: rgba(255, 255, 255, 0.98);
             border-radius: 12px;
             box-shadow: var(--shadow-md);
@@ -620,8 +622,6 @@
         // 전역 변수 정의
         let map;
         let markers = [];
-        let currentCountryAssets = null;
-        let currentCountry = null; // 현재 로컬로 보고 있는 국가 (null이면 글로벌 상태)
         let assetsByCountry = null;
         let lastViewedAsset = null; // 마지막으로 확인한 자산 저장
         let updateMarkers = () => {}; // initMap에서 실제 구현이 할당됨 (전역에서도 호출 가능하도록)
@@ -817,18 +817,18 @@
             const groupOrder = ["realestate", "renewable", "resource"];
             const activeGroups = groupOrder.filter(slug => (categoryTypes[slug] || []).length > 0);
 
-            const allBtn = `<button class="category-chip-btn active" data-filter="all" onclick="setCategoryFilter('all')">
+            const allBtn = `<button class="category-chip-btn active" data-filter="all" onclick="toggleAll()">
                 <span class="chip-icon">${categoryChipSvgMarkup("all")}</span>전체
             </button>`;
 
             const groupBoxes = activeGroups.map(slug => {
                 const chips = categoryTypes[slug].map(type => `
-                    <button class="subtype-chip-btn" data-category="${slug}" data-type="${type}" onclick="setTypeFilter('${slug}', '${type}')">
+                    <button class="subtype-chip-btn" data-category="${slug}" data-type="${type}" onclick="toggleType('${slug}', '${type}')">
                         <span class="subtype-chip-icon">${typeChipSvgMarkup(slug, type)}</span>${typeLabels[type] || type}
                     </button>
                 `).join("");
                 return `<div class="subtype-groupbox">
-                    <button class="category-chip-btn" data-filter="${slug}" onclick="setCategoryFilter('${slug}')">
+                    <button class="category-chip-btn" data-filter="${slug}" onclick="toggleCategory('${slug}')">
                         <span class="chip-icon">${categoryChipSvgMarkup(slug)}</span>${slugToCategory[slug]}
                     </button>
                     <div class="subtype-group-chips">${chips}</div>
@@ -853,6 +853,25 @@
         }
         window.addEventListener("resize", syncTopbarHeight);
 
+        // 현재 켜져 있는 토글들을 사람이 읽을 수 있는 라벨로 합친다 (결과 패널 제목용).
+        function buildActiveFilterLabel() {
+            const parts = [];
+            if (activeAll) {
+                parts.push("전체");
+            } else {
+                activeCategories.forEach(slug => parts.push(slugToCategory[slug]));
+                activeTypes.forEach(key => {
+                    const type = key.split(":")[1];
+                    parts.push(typeLabels[type] || type);
+                });
+                if (parts.length === 0) parts.push("선택 없음");
+            }
+            if (activeCountries.size > 0) {
+                parts.push([...activeCountries].join("/"));
+            }
+            return parts.join(", ");
+        }
+
         // 상단 칩(전체/카테고리/세부 마커 유형)을 클릭하면 해당하는 자산들을 목록으로 모아 보여준다.
         function renderResultsPanel() {
             const panel = document.getElementById("resultsPanel");
@@ -861,8 +880,7 @@
             if (!panel || !list || !titleEl) return;
 
             const filtered = getFilteredAssets();
-            const label = activeTypeFilter ? (typeLabels[activeTypeFilter] || activeTypeFilter) : (activeCategoryFilter || "전체");
-            titleEl.textContent = `${label} · ${filtered.length}건`;
+            titleEl.textContent = `${buildActiveFilterLabel()} · ${filtered.length}건`;
 
             list.innerHTML = filtered.length
                 ? filtered.map(asset => `
@@ -915,13 +933,26 @@
             };
         }
 
+        // 줌아웃된 국가 단위 마커의 아이콘: 여러 카테고리/유형이 동시에 켜져 있으면(또는 전체 상태면)
+        // 특정 색을 대표할 수 없으므로 국기 아이콘으로, 정확히 하나만 켜져 있으면 그 색/글리프로 표시한다.
+        function clusterMarkerIcon(country) {
+            if (!activeAll && activeTypes.size === 1 && activeCategories.size === 0) {
+                const [slug, type] = [...activeTypes][0].split(":");
+                return typeMarkerIcon(slug, type);
+            }
+            if (!activeAll && activeCategories.size === 1 && activeTypes.size === 0) {
+                return categoryMarkerIcon(slugToCategory[[...activeCategories][0]]);
+            }
+            return countryMarkerIcon(country);
+        }
+
         // 상단 우측 국가별 마커(칩) 렌더링 — 클릭하면 해당 국가로 바로 이동
         function renderCountryBar() {
             const bar = document.getElementById("countryBar");
             if (!bar) return;
             const countries = [...new Set(assets.map(asset => asset.country))].sort();
             bar.innerHTML = countries.map(country => `
-                <button class="country-chip-btn" data-country="${country}" onclick="focusCountry('${country}')">
+                <button class="country-chip-btn" data-country="${country}" onclick="toggleCountry('${country}')">
                     <img class="country-chip-flag" src="${countryFlags[country] || ""}" alt="">${country}
                 </button>
             `).join("");
@@ -932,70 +963,99 @@
 
         function highlightActiveCountry() {
             document.querySelectorAll(".country-chip-btn").forEach(el => {
-                el.classList.toggle("active", el.dataset.country === currentCountry);
+                el.classList.toggle("active", activeCountries.has(el.dataset.country));
             });
         }
 
-        // 국가 칩 클릭: 현재 필터가 적용된 상태로 해당 국가의 자산으로 확대 이동
-        function focusCountry(country) {
-            if (!map || !assetsByCountry || !assetsByCountry[country]) return;
-            currentCountry = country;
-            const filteredInCountry = getFilteredAssets().filter(asset => asset.country === country);
-            currentCountryAssets = filteredInCountry.length > 0 ? filteredInCountry : assetsByCountry[country];
-            moveToAssets();
-            showCountryStats(country);
-            highlightActiveCountry();
+        // 국가 칩 on/off 토글: 여러 국가를 동시에 선택할 수 있으며, 선택된 국가가 있으면
+        // 다른 카테고리/유형 필터와 AND로 결합되어 지도에 표시된다.
+        function toggleCountry(country) {
+            if (activeCountries.has(country)) {
+                activeCountries.delete(country);
+            } else {
+                activeCountries.add(country);
+            }
+            applyFilterState();
         }
 
-        // 현재 선택된 카테고리 필터 (null = 전체) / 자산 유형 필터 (null = 해당 카테고리 전체 유형)
-        let activeCategoryFilter = null;
-        let activeTypeFilter = null;
+        // 상단 버튼은 모두 독립적인 on/off 토글이다.
+        // activeAll: "전체" 토글 상태. activeCategories/activeTypes: 켜진 카테고리·세부 유형들의 집합(OR로 합쳐짐).
+        // activeCountries: 켜진 국가들의 집합(비어있지 않으면 카테고리/유형 결과와 AND로 결합됨).
+        let activeAll = true;
+        const activeCategories = new Set();
+        const activeTypes = new Set();
+        const activeCountries = new Set();
 
         function getFilteredAssets() {
-            let list = activeCategoryFilter ? assets.filter(asset => asset.category === activeCategoryFilter) : assets;
-            if (activeTypeFilter) {
-                list = list.filter(asset => (getAssetType(asset) || "default") === activeTypeFilter);
+            let list;
+            if (activeAll) {
+                list = assets;
+            } else {
+                list = assets.filter(asset => {
+                    const slug = categoryClass(asset.category);
+                    const type = getAssetType(asset) || "default";
+                    return activeCategories.has(slug) || activeTypes.has(`${slug}:${type}`);
+                });
+            }
+            if (activeCountries.size > 0) {
+                list = list.filter(asset => activeCountries.has(asset.country));
             }
             return list;
         }
 
-        // 카테고리 필터를 다시 반영하는 동작을 공유 (필터 상태 반영 + 줌 재조정 + 마커 갱신)
+        // 토글 상태가 바뀔 때마다 공유되는 동작: 버튼 active 표시 갱신 + 줌 재조정 + 마커/통계/목록 갱신
         function applyFilterState() {
             document.querySelectorAll(".category-chip-btn").forEach(el => {
-                el.classList.toggle("active", el.dataset.filter === (activeCategoryFilter ? categoryClass(activeCategoryFilter) : "all"));
+                el.classList.toggle("active", el.dataset.filter === "all" ? activeAll : activeCategories.has(el.dataset.filter));
             });
             document.querySelectorAll(".subtype-chip-btn").forEach(el => {
-                el.classList.toggle("active", activeTypeFilter !== null && el.dataset.category === categoryClass(activeCategoryFilter) && el.dataset.type === activeTypeFilter);
+                el.classList.toggle("active", activeTypes.has(`${el.dataset.category}:${el.dataset.type}`));
             });
-
-            // 상단 카테고리/유형 필터를 클릭하면 국가 선택과 관계없이 항상 글로벌 자산을 보여준다.
-            currentCountry = null;
-            currentCountryAssets = null;
-            if (map && assetsByCountry) {
-                map.moveCamera({ center: getGlobalAssetCenter(assetsByCountry), zoom: 3 });
-                showGlobalStats();
-            }
             highlightActiveCountry();
+
+            const filtered = getFilteredAssets();
+            if (map) {
+                if (activeCountries.size > 0) {
+                    fitMapToAssets(filtered);
+                } else if (assetsByCountry) {
+                    map.moveCamera({ center: getGlobalAssetCenter(assetsByCountry), zoom: 3 });
+                }
+            }
+
+            renderStatsPanel();
             updateMarkers();
             renderResultsPanel();
         }
 
-        function setCategoryFilter(slug) {
-            activeCategoryFilter = slug === "all" ? null : slugToCategory[slug];
-            activeTypeFilter = null;
+        // "전체" 토글: 켜면 다른 카테고리/유형 선택을 모두 해제하고 전체를 보여준다.
+        function toggleAll() {
+            activeAll = !activeAll;
+            if (activeAll) {
+                activeCategories.clear();
+                activeTypes.clear();
+            }
             applyFilterState();
         }
 
-        // 상단 서브타입 칩 클릭: 카테고리 + 세부 자산 유형(마커 아이콘)까지 함께 필터링
-        function setTypeFilter(slug, type) {
-            const category = slugToCategory[slug];
-            const isSameSelection = activeCategoryFilter === category && activeTypeFilter === type;
-            if (isSameSelection) {
-                // 같은 칩을 다시 클릭하면 세부 유형만 해제하고 카테고리 필터는 유지
-                activeTypeFilter = null;
+        // 카테고리 박스 헤더 토글: 해당 카테고리 전체를 결과에 추가/제외한다.
+        function toggleCategory(slug) {
+            activeAll = false;
+            if (activeCategories.has(slug)) {
+                activeCategories.delete(slug);
             } else {
-                activeCategoryFilter = category;
-                activeTypeFilter = type;
+                activeCategories.add(slug);
+            }
+            applyFilterState();
+        }
+
+        // 세부 마커 유형 칩 토글: 해당 카테고리+유형 조합을 결과에 추가/제외한다.
+        function toggleType(slug, type) {
+            activeAll = false;
+            const key = `${slug}:${type}`;
+            if (activeTypes.has(key)) {
+                activeTypes.delete(key);
+            } else {
+                activeTypes.add(key);
             }
             applyFilterState();
         }
@@ -1026,24 +1086,37 @@
             document.getElementById("countResource").textContent = counts.resource;
         }
 
-        // 하단 패널을 전체(글로벌) 통계로 표시
-        function showGlobalStats() {
-            document.getElementById("statTotal").textContent = assets.length;
-            document.getElementById("statTotalLabel").textContent = "총 자산";
-            document.getElementById("statScope").textContent = Object.keys(assetsByCountry).length;
-            document.getElementById("statScopeLabel").textContent = "진출 국가";
-            renderCategoryCounts(assets);
+        // 하단 통계 패널을 현재 토글 상태(getFilteredAssets)에 맞춰 갱신
+        function renderStatsPanel() {
+            const filtered = getFilteredAssets();
+            const isDefaultView = activeAll && activeCountries.size === 0;
+
+            document.getElementById("statTotal").textContent = filtered.length;
+            document.getElementById("statTotalLabel").textContent = isDefaultView ? "총 자산" : "자산 수";
+
+            if (activeCountries.size === 1) {
+                document.getElementById("statScope").textContent = [...activeCountries][0];
+                document.getElementById("statScopeLabel").textContent = "선택 국가";
+            } else if (activeCountries.size > 1) {
+                document.getElementById("statScope").textContent = `${activeCountries.size}개국`;
+                document.getElementById("statScopeLabel").textContent = "선택 국가";
+            } else {
+                document.getElementById("statScope").textContent = new Set(filtered.map(asset => asset.country)).size;
+                document.getElementById("statScopeLabel").textContent = "진출 국가";
+            }
+
+            renderCategoryCounts(filtered);
+            syncLegendPanelOffset();
         }
 
-        // 하단 패널을 선택한 국가 기준 통계로 표시
-        function showCountryStats(country) {
-            const countryAssets = assetsByCountry[country] || [];
-            document.getElementById("statTotal").textContent = countryAssets.length;
-            document.getElementById("statTotalLabel").textContent = "자산 수";
-            document.getElementById("statScope").textContent = country;
-            document.getElementById("statScopeLabel").textContent = "선택 국가";
-            renderCategoryCounts(countryAssets);
+        // 결과 목록 패널이 좌하단 통계 패널과 겹치지 않도록, 통계 패널의 실측 높이 위에 쌓아 배치한다.
+        function syncLegendPanelOffset() {
+            const legend = document.getElementById("legendPanel");
+            const resultsPanel = document.getElementById("resultsPanel");
+            if (!legend || !resultsPanel) return;
+            resultsPanel.style.bottom = `${24 + legend.offsetHeight + 12}px`;
         }
+        window.addEventListener("resize", syncLegendPanelOffset);
 
         // 지도 초기화 함수
         function initMap() {
@@ -1064,7 +1137,7 @@
             }, {});
 
             // 통계 패널 업데이트 (전체 기준)
-            showGlobalStats();
+            renderStatsPanel();
 
             // 실제 진출 국가들의 위치 분포를 기준으로 첫 화면 중심 설정
             const globalCenter = getGlobalAssetCenter(assetsByCountry);
@@ -1119,18 +1192,12 @@
                             position: center,
                             map: map,
                             title: country,
-                            icon: activeTypeFilter ? typeMarkerIcon(categoryClass(activeCategoryFilter), activeTypeFilter)
-                                : activeCategoryFilter ? categoryMarkerIcon(activeCategoryFilter)
-                                : countryMarkerIcon(country)
+                            icon: clusterMarkerIcon(country)
                         });
 
-                        // 국가 마커 클릭 시 팝업 없이 바로 해당 국가 자산으로 이동 + 하단 패널 갱신
+                        // 국가 마커 클릭 시 팝업 없이 해당 국가를 on/off 토글 (국가 칩 클릭과 동일하게 동작)
                         marker.addListener("click", () => {
-                            currentCountryAssets = countryAssets;
-                            currentCountry = country;
-                            moveToAssets();
-                            showCountryStats(country);
-                            highlightActiveCountry();
+                            toggleCountry(country);
                         });
 
                         markers.push(marker);
@@ -1193,12 +1260,12 @@
             document.getElementById("popupOverlay").style.display = "none";
         }
 
-        // 자산으로 이동 함수
-        function moveToAssets() {
-            if (!currentCountryAssets || currentCountryAssets.length === 0) return;
+        // 주어진 자산 목록이 모두 보이도록 지도 중심/줌을 맞춘다 (선택된 국가가 하나 이상일 때 사용).
+        function fitMapToAssets(assetList) {
+            if (!map || !assetList || assetList.length === 0) return;
 
-            const lats = currentCountryAssets.map(asset => asset.position.lat);
-            const lngs = currentCountryAssets.map(asset => asset.position.lng);
+            const lats = assetList.map(asset => asset.position.lat);
+            const lngs = assetList.map(asset => asset.position.lng);
             const minLat = Math.min(...lats);
             const maxLat = Math.max(...lats);
             const minLng = Math.min(...lngs);
