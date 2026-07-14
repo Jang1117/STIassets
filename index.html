@@ -452,15 +452,13 @@
             display: block;
         }
 
-        /* 상단 마커/카테고리 칩 클릭 시 해당 자산 목록을 모아 보여주는 패널.
-           좌하단 통계 패널(.legend-panel) 바로 위에 쌓이도록 위치하며, 정확한 bottom 값은
-           JS(syncLegendPanelOffset)가 통계 패널의 실제 높이를 측정해 지정한다. */
+        /* 상단 마커/카테고리 칩 클릭 시 해당 자산 목록을 모아 보여주는 패널 */
         .results-panel {
             position: fixed;
-            left: 20px;
-            bottom: 210px;
+            right: 20px;
+            bottom: 24px;
             width: 300px;
-            max-height: 40vh;
+            max-height: 50vh;
             background: rgba(255, 255, 255, 0.98);
             border-radius: 12px;
             box-shadow: var(--shadow-md);
@@ -1044,6 +1042,10 @@
                 activeCategories.delete(slug);
             } else {
                 activeCategories.add(slug);
+                // 상위 카테고리를 켜면 그 안의 개별 세부 유형 선택은 이미 포함되므로 모두 끈다
+                [...activeTypes].forEach(key => {
+                    if (key.startsWith(`${slug}:`)) activeTypes.delete(key);
+                });
             }
             applyFilterState();
         }
@@ -1106,17 +1108,7 @@
             }
 
             renderCategoryCounts(filtered);
-            syncLegendPanelOffset();
         }
-
-        // 결과 목록 패널이 좌하단 통계 패널과 겹치지 않도록, 통계 패널의 실측 높이 위에 쌓아 배치한다.
-        function syncLegendPanelOffset() {
-            const legend = document.getElementById("legendPanel");
-            const resultsPanel = document.getElementById("resultsPanel");
-            if (!legend || !resultsPanel) return;
-            resultsPanel.style.bottom = `${24 + legend.offsetHeight + 12}px`;
-        }
-        window.addEventListener("resize", syncLegendPanelOffset);
 
         // 지도 초기화 함수
         function initMap() {
