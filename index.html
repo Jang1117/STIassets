@@ -42,12 +42,11 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 64px;
             background: var(--navy);
             display: flex;
             align-items: center;
             gap: 20px;
-            padding: 0 24px;
+            padding: 10px 24px;
             z-index: 1000;
             box-shadow: var(--shadow-md);
         }
@@ -173,34 +172,45 @@
         /* Google Maps가 초기화 시 이 요소의 position을 강제로 relative로 덮어쓰므로,
            fixed+inset 방식 대신 margin-top과 명시적 height로 크기를 지정한다. */
         #map {
+            /* 실제 높이는 topbar 실측 높이에 맞춰 JS(syncTopbarHeight)가 지정한다 */
             margin-top: 64px;
             height: calc(100vh - 64px);
             width: 100%;
         }
 
-        /* 카테고리별 자산 유형(마커 아이콘) 서브 필터 바 (브랜드 우측, 같은 줄) */
+        /* 카테고리별 자산 유형(마커 아이콘) 서브 필터 바 (브랜드 우측, 같은 줄).
+           "전체" 버튼 + 카테고리별 테두리 박스(그룹명 윗줄 가운데 정렬 + 세부 마커 칩 아랫줄)로 구성.
+           폭이 부족하면 박스 단위로 줄바꿈되며 가로 스크롤은 없다. */
         .subtype-bar {
             display: flex;
-            align-items: center;
-            gap: 16px;
-            height: 100%;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
             flex: 1 1 auto;
             min-width: 0;
-            overflow-x: auto;
         }
 
-        .subtype-group {
+        .subtype-bar > .category-chip-btn {
+            margin-top: 4px;
+        }
+
+        .subtype-groupbox {
             display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 10px;
+            padding: 6px 12px;
             flex-shrink: 0;
         }
 
-        .subtype-divider {
-            width: 1px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.15);
-            flex-shrink: 0;
+        .subtype-group-chips {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
         }
 
         .subtype-chip-btn {
@@ -463,6 +473,113 @@
             border-radius: 10px;
             display: block;
         }
+
+        /* 상단 마커/카테고리 칩 클릭 시 해당 자산 목록을 모아 보여주는 패널 */
+        .results-panel {
+            position: fixed;
+            right: 20px;
+            top: 90px;
+            width: 300px;
+            max-height: 60vh;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            z-index: 950;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .results-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--navy);
+        }
+
+        .results-panel-close {
+            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 13px;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .results-panel-close:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .results-panel-list {
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .results-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .results-item:hover {
+            background: var(--bg);
+        }
+
+        .results-item-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: var(--bg);
+        }
+
+        .results-item-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .results-item-text strong {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .results-item-text span {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .results-panel-empty {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -503,6 +620,15 @@
             <div class="legend-item"><span class="dot dot-renewable"></span>신재생에너지<b id="countRenewable">0</b></div>
             <div class="legend-item"><span class="dot dot-resource"></span>자원/에너지인프라<b id="countResource">0</b></div>
         </div>
+    </div>
+
+    <!-- 상단 카테고리/마커 칩 클릭 시 해당 자산 목록 -->
+    <div class="results-panel" id="resultsPanel">
+        <div class="results-panel-header">
+            <span id="resultsPanelTitle">전체 자산</span>
+            <span class="results-panel-close" onclick="closeResultsPanel()">✕</span>
+        </div>
+        <div class="results-panel-list" id="resultsPanelList"></div>
     </div>
 
     <!-- 팝업 창 -->
@@ -710,35 +836,96 @@
             </svg>`;
         }
 
-        // 카테고리별로 그룹화된 자산 유형 필터 바를 렌더링 (그룹 라벨 자체가 "해당 카테고리 전체 보기" 버튼 역할)
+        // 서브필터 바를 윗줄(전체+카테고리 버튼)/아랫줄(세부 마커 칩 전체) 2줄로 렌더링
+        // 카테고리 버튼 자체가 "해당 카테고리 전체 보기" 역할을 겸한다.
         function renderSubtypeBar() {
             const bar = document.getElementById("subtypeBar");
             if (!bar) return;
             const groupOrder = ["realestate", "renewable", "resource"];
+            const activeGroups = groupOrder.filter(slug => (categoryTypes[slug] || []).length > 0);
 
             const allBtn = `<button class="category-chip-btn active" data-filter="all" onclick="setCategoryFilter('all')">
                 <span class="chip-icon">${categoryChipSvgMarkup("all")}</span>전체
             </button>`;
 
-            const groups = groupOrder
-                .filter(slug => (categoryTypes[slug] || []).length > 0)
-                .map(slug => {
-                    const chips = categoryTypes[slug].map(type => `
-                        <button class="subtype-chip-btn" data-category="${slug}" data-type="${type}" onclick="setTypeFilter('${slug}', '${type}')">
-                            <span class="subtype-chip-icon">${typeChipSvgMarkup(slug, type)}</span>${typeLabels[type] || type}
-                        </button>
-                    `).join("");
-                    return `<div class="subtype-group">
-                        <button class="category-chip-btn" data-filter="${slug}" onclick="setCategoryFilter('${slug}')">
-                            <span class="chip-icon">${categoryChipSvgMarkup(slug)}</span>${slugToCategory[slug]}
-                        </button>
-                        ${chips}
-                    </div>`;
-                }).join(`<span class="subtype-divider"></span>`);
+            const groupBoxes = activeGroups.map(slug => {
+                const chips = categoryTypes[slug].map(type => `
+                    <button class="subtype-chip-btn" data-category="${slug}" data-type="${type}" onclick="setTypeFilter('${slug}', '${type}')">
+                        <span class="subtype-chip-icon">${typeChipSvgMarkup(slug, type)}</span>${typeLabels[type] || type}
+                    </button>
+                `).join("");
+                return `<div class="subtype-groupbox">
+                    <button class="category-chip-btn" data-filter="${slug}" onclick="setCategoryFilter('${slug}')">
+                        <span class="chip-icon">${categoryChipSvgMarkup(slug)}</span>${slugToCategory[slug]}
+                    </button>
+                    <div class="subtype-group-chips">${chips}</div>
+                </div>`;
+            }).join("");
 
-            bar.innerHTML = `${allBtn}<span class="subtype-divider"></span>${groups}`;
+            bar.innerHTML = `${allBtn}${groupBoxes}`;
+            syncTopbarHeight();
         }
         renderSubtypeBar();
+
+        // topbar는 내용(서브필터 2줄)에 따라 실제 높이가 달라지므로, 실측 높이를 지도 영역 여백에 반영한다.
+        function syncTopbarHeight() {
+            const topbar = document.querySelector(".topbar");
+            const mapEl = document.getElementById("map");
+            const resultsPanel = document.getElementById("resultsPanel");
+            if (!topbar) return;
+            const h = topbar.offsetHeight;
+            if (mapEl) {
+                mapEl.style.marginTop = `${h}px`;
+                mapEl.style.height = `calc(100vh - ${h}px)`;
+            }
+            if (resultsPanel) {
+                resultsPanel.style.top = `${h + 16}px`;
+            }
+        }
+        window.addEventListener("resize", syncTopbarHeight);
+
+        // 상단 칩(전체/카테고리/세부 마커 유형)을 클릭하면 해당하는 자산들을 목록으로 모아 보여준다.
+        function renderResultsPanel() {
+            const panel = document.getElementById("resultsPanel");
+            const list = document.getElementById("resultsPanelList");
+            const titleEl = document.getElementById("resultsPanelTitle");
+            if (!panel || !list || !titleEl) return;
+
+            const filtered = getFilteredAssets();
+            const label = activeTypeFilter ? (typeLabels[activeTypeFilter] || activeTypeFilter) : (activeCategoryFilter || "전체");
+            titleEl.textContent = `${label} · ${filtered.length}건`;
+
+            list.innerHTML = filtered.length
+                ? filtered.map(asset => `
+                    <button class="results-item" onclick="focusAsset(${assets.indexOf(asset)})">
+                        <img class="results-item-thumb" src="${asset.imageUrl || asset.logoUrl || ""}" alt="" onerror="this.style.visibility='hidden'">
+                        <span class="results-item-text">
+                            <strong>${asset.title}</strong>
+                            <span>${asset.country}${asset.establishedDate ? " · " + asset.establishedDate : ""}</span>
+                        </span>
+                    </button>
+                `).join("")
+                : `<div class="results-panel-empty">해당하는 자산이 없습니다.</div>`;
+
+            panel.style.display = "flex";
+        }
+
+        function closeResultsPanel() {
+            document.getElementById("resultsPanel").style.display = "none";
+        }
+
+        // 목록에서 자산을 클릭하면 지도에서 해당 위치로 이동하고 팝업을 띄운다.
+        function focusAsset(index) {
+            const asset = assets[index];
+            if (!asset || !map) return;
+            map.setZoom(17);
+            map.setCenter(asset.position);
+            showPopup(asset.title, asset.description, `
+                <span class="category-badge category-${categoryClass(asset.category)}">${asset.category}</span>
+                <p class="established-date">투자/설립시기: ${asset.establishedDate}</p>
+                <img src="${asset.imageUrl}" alt="${asset.title}" class="asset-image">
+            `, asset);
+        }
 
         // 국가 -> 국기 이미지 매핑
         const countryFlags = {
@@ -789,6 +976,7 @@
                 }
             }
             updateMarkers();
+            renderResultsPanel();
         }
 
         function setCategoryFilter(slug) {
