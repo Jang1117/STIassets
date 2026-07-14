@@ -135,7 +135,7 @@ const assets = [
         imageUrl: "./images/eng_10.png",
         country: "인도네시아",
         establishedDate: "2000-06",
-        category: "기타"
+        category: "자원/에너지인프라"
     },
     {
         position: { lat: -1.87111795858333, lng: 115.8756424428207 },
@@ -295,6 +295,6 @@ const assets = [
         //imageUrl: "",
         country: "한국",
         establishedDate: "2007-07",
-        category: "기타"
+        category: "부동산 자산관리"
     }  
 ];
