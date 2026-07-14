@@ -161,7 +161,7 @@
            폭이 부족하면 박스 단위로 줄바꿈되며 가로 스크롤은 없다. */
         .subtype-bar {
             display: flex;
-            align-items: flex-start;
+            align-items: stretch;
             justify-content: center;
             flex-wrap: wrap;
             gap: 10px;
@@ -170,7 +170,9 @@
         }
 
         .subtype-bar > .category-chip-btn {
-            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .subtype-groupbox {
