@@ -716,6 +716,7 @@
         };
 
         function getAssetType(asset) {
+            if (asset.title === "PT. SAMINDO RESOURCES TBK. (SRT)" || asset.title === "동해임산") return null;
             const text = `${asset.title} ${asset.description}`.toLowerCase();
             if (/palm oil|팜오일|농장|plantation/.test(text)) return "palm";
             if (/천연가스|\blpg\b|condensate|\bgas\b/.test(text)) return "gas";
