@@ -46,7 +46,7 @@
             background: var(--navy);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 20px;
             padding: 0 24px;
             z-index: 1000;
             box-shadow: var(--shadow-md);
@@ -56,6 +56,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-shrink: 0;
         }
 
         .brand-mark {
@@ -98,6 +99,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-shrink: 0;
         }
 
         .segmented {
@@ -176,6 +178,72 @@
             width: 100%;
         }
 
+        /* 카테고리별 자산 유형(마커 아이콘) 서브 필터 바 (브랜드 우측, 같은 줄) */
+        .subtype-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: 100%;
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow-x: auto;
+        }
+
+        .subtype-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .subtype-divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
+        }
+
+        .subtype-chip-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            padding: 3px 10px 3px 4px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 500;
+            color: #cbd5e1;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .subtype-chip-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--white);
+        }
+
+        .subtype-chip-btn.active {
+            background: var(--white);
+            color: var(--navy);
+            border-color: var(--white);
+            font-weight: 700;
+        }
+
+        .subtype-chip-icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            display: flex;
+        }
+
+        .subtype-chip-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
         /* 범례 / 통계 패널 */
         .legend-panel {
             position: fixed;
@@ -249,16 +317,6 @@
         .dot-realestate { background: var(--slate); }
         .dot-renewable { background: var(--green); }
         .dot-resource { background: var(--amber); }
-
-        /* 상단 카테고리 필터 바 */
-        .category-filter-bar {
-            display: flex;
-            gap: 4px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 8px;
-            padding: 3px;
-        }
 
         .category-chip-btn {
             display: flex;
@@ -416,21 +474,8 @@
                 <span>Global Asset Map</span>
             </div>
         </div>
+        <div class="subtype-bar" id="subtypeBar"></div>
         <div class="topbar-controls">
-            <div class="category-filter-bar" id="categoryFilterBar">
-                <button class="category-chip-btn active" data-filter="all" onclick="setCategoryFilter('all')">
-                    <span class="chip-icon"></span>전체
-                </button>
-                <button class="category-chip-btn" data-filter="realestate" onclick="setCategoryFilter('realestate')">
-                    <span class="chip-icon"></span>부동산 자산관리
-                </button>
-                <button class="category-chip-btn" data-filter="renewable" onclick="setCategoryFilter('renewable')">
-                    <span class="chip-icon"></span>신재생에너지
-                </button>
-                <button class="category-chip-btn" data-filter="resource" onclick="setCategoryFilter('resource')">
-                    <span class="chip-icon"></span>자원/에너지인프라
-                </button>
-            </div>
             <div class="segmented">
                 <button class="global-button active" id="globalBtn" onclick="resetMap()">Global</button>
                 <select id="localCountrySelect" onchange="moveToCountry()" aria-label="국가 선택">
@@ -589,11 +634,10 @@
             return null;
         }
 
+        // 카테고리(슬러그) + 자산 유형 조합으로 마커 아이콘을 생성 (지도 마커 & 필터 아이콘 공용)
         const assetIconCache = {};
-        function assetMarkerIcon(asset) {
-            const type = getAssetType(asset);
-            if (!type || !assetGlyphs[type]) return categoryMarkerIcon(asset.category);
-            const slug = categoryClass(asset.category);
+        function typeMarkerIcon(slug, type) {
+            if (!type || type === "default" || !assetGlyphs[type]) return categoryMarkerIcon(slugToCategory[slug] || slug);
             const cacheKey = `${slug}-${type}`;
             if (!assetIconCache[cacheKey]) {
                 const color = categoryColors[slug];
@@ -612,6 +656,12 @@
             };
         }
 
+        function assetMarkerIcon(asset) {
+            const slug = categoryClass(asset.category);
+            const type = getAssetType(asset) || "default";
+            return typeMarkerIcon(slug, type);
+        }
+
         // 상단 필터 바에 쓰이는 원형 칩 아이콘 (핀 꼬리 없이 원 안 글리프만)
         function categoryChipSvgMarkup(slug) {
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 26 26">
@@ -620,11 +670,75 @@
             </svg>`;
         }
 
-        // 상단 카테고리 필터 버튼에 아이콘 채우기 (Google Maps 로드를 기다릴 필요 없음)
-        document.querySelectorAll(".category-chip-btn").forEach(btn => {
-            const slot = btn.querySelector(".chip-icon");
-            if (slot) slot.innerHTML = categoryChipSvgMarkup(btn.dataset.filter);
-        });
+        // 자산 유형(마커 아이콘 종류)의 한글 표시명
+        const typeLabels = {
+            wind: "풍력",
+            solar: "태양광",
+            biomass: "바이오매스",
+            plant: "발전소",
+            mine: "광산",
+            truck: "육상운송",
+            ship: "해상운송",
+            palm: "팜오일",
+            gas: "가스",
+            golf: "골프",
+            hotel: "호텔·리조트",
+            default: "기타"
+        };
+
+        // 카테고리(슬러그)별로 실제 존재하는 자산 유형을 자산 데이터에서 직접 집계
+        function buildCategoryTypes() {
+            const result = {};
+            assets.forEach(asset => {
+                const slug = categoryClass(asset.category);
+                const type = getAssetType(asset) || "default";
+                if (!result[slug]) result[slug] = [];
+                if (!result[slug].includes(type)) result[slug].push(type);
+            });
+            return result;
+        }
+        const categoryTypes = buildCategoryTypes();
+
+        // 서브타입 필터 칩에 쓰이는 원형 아이콘 (카테고리 색상 + 유형별 글리프)
+        function typeChipSvgMarkup(slug, type) {
+            if (!type || type === "default" || !assetGlyphs[type]) return categoryChipSvgMarkup(slug);
+            const color = categoryColors[slug];
+            const glyph = assetGlyphs[type].replace(/\{\{color\}\}/g, color);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 26 26">
+                <circle cx="17" cy="17" r="13" fill="#ffffff"/>
+                ${glyph}
+            </svg>`;
+        }
+
+        // 카테고리별로 그룹화된 자산 유형 필터 바를 렌더링 (그룹 라벨 자체가 "해당 카테고리 전체 보기" 버튼 역할)
+        function renderSubtypeBar() {
+            const bar = document.getElementById("subtypeBar");
+            if (!bar) return;
+            const groupOrder = ["realestate", "renewable", "resource"];
+
+            const allBtn = `<button class="category-chip-btn active" data-filter="all" onclick="setCategoryFilter('all')">
+                <span class="chip-icon">${categoryChipSvgMarkup("all")}</span>전체
+            </button>`;
+
+            const groups = groupOrder
+                .filter(slug => (categoryTypes[slug] || []).length > 0)
+                .map(slug => {
+                    const chips = categoryTypes[slug].map(type => `
+                        <button class="subtype-chip-btn" data-category="${slug}" data-type="${type}" onclick="setTypeFilter('${slug}', '${type}')">
+                            <span class="subtype-chip-icon">${typeChipSvgMarkup(slug, type)}</span>${typeLabels[type] || type}
+                        </button>
+                    `).join("");
+                    return `<div class="subtype-group">
+                        <button class="category-chip-btn" data-filter="${slug}" onclick="setCategoryFilter('${slug}')">
+                            <span class="chip-icon">${categoryChipSvgMarkup(slug)}</span>${slugToCategory[slug]}
+                        </button>
+                        ${chips}
+                    </div>`;
+                }).join(`<span class="subtype-divider"></span>`);
+
+            bar.innerHTML = `${allBtn}<span class="subtype-divider"></span>${groups}`;
+        }
+        renderSubtypeBar();
 
         // 국가 -> 국기 이미지 매핑
         const countryFlags = {
@@ -645,18 +759,25 @@
             };
         }
 
-        // 현재 선택된 카테고리 필터 (null = 전체)
+        // 현재 선택된 카테고리 필터 (null = 전체) / 자산 유형 필터 (null = 해당 카테고리 전체 유형)
         let activeCategoryFilter = null;
+        let activeTypeFilter = null;
 
         function getFilteredAssets() {
-            if (!activeCategoryFilter) return assets;
-            return assets.filter(asset => asset.category === activeCategoryFilter);
+            let list = activeCategoryFilter ? assets.filter(asset => asset.category === activeCategoryFilter) : assets;
+            if (activeTypeFilter) {
+                list = list.filter(asset => (getAssetType(asset) || "default") === activeTypeFilter);
+            }
+            return list;
         }
 
-        function setCategoryFilter(slug) {
-            activeCategoryFilter = slug === "all" ? null : slugToCategory[slug];
+        // 카테고리 필터를 다시 반영하는 동작을 공유 (필터 상태 반영 + 줌 재조정 + 마커 갱신)
+        function applyFilterState() {
             document.querySelectorAll(".category-chip-btn").forEach(el => {
-                el.classList.toggle("active", el.dataset.filter === slug);
+                el.classList.toggle("active", el.dataset.filter === (activeCategoryFilter ? categoryClass(activeCategoryFilter) : "all"));
+            });
+            document.querySelectorAll(".subtype-chip-btn").forEach(el => {
+                el.classList.toggle("active", activeTypeFilter !== null && el.dataset.category === categoryClass(activeCategoryFilter) && el.dataset.type === activeTypeFilter);
             });
 
             // 로컬(국가) 상태에서 필터링하면, 그 국가의 필터링된 자산이 한눈에 보이도록 줌 재조정
@@ -668,6 +789,26 @@
                 }
             }
             updateMarkers();
+        }
+
+        function setCategoryFilter(slug) {
+            activeCategoryFilter = slug === "all" ? null : slugToCategory[slug];
+            activeTypeFilter = null;
+            applyFilterState();
+        }
+
+        // 상단 서브타입 칩 클릭: 카테고리 + 세부 자산 유형(마커 아이콘)까지 함께 필터링
+        function setTypeFilter(slug, type) {
+            const category = slugToCategory[slug];
+            const isSameSelection = activeCategoryFilter === category && activeTypeFilter === type;
+            if (isSameSelection) {
+                // 같은 칩을 다시 클릭하면 세부 유형만 해제하고 카테고리 필터는 유지
+                activeTypeFilter = null;
+            } else {
+                activeCategoryFilter = category;
+                activeTypeFilter = type;
+            }
+            applyFilterState();
         }
 
         // 전체 진출 국가의 위·경도 범위 중간값으로 아프리카 중심의 글로벌 화면을 만든다.
@@ -798,7 +939,9 @@
                             position: center,
                             map: map,
                             title: country,
-                            icon: activeCategoryFilter ? categoryMarkerIcon(activeCategoryFilter) : countryMarkerIcon(country)
+                            icon: activeTypeFilter ? typeMarkerIcon(categoryClass(activeCategoryFilter), activeTypeFilter)
+                                : activeCategoryFilter ? categoryMarkerIcon(activeCategoryFilter)
+                                : countryMarkerIcon(country)
                         });
 
                         // 국가 마커 클릭 시 팝업 없이 바로 해당 국가 자산으로 이동 + 하단 패널 갱신
