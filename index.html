@@ -1058,6 +1058,9 @@
                 activeTypes.delete(key);
             } else {
                 activeTypes.add(key);
+                // 상위 카테고리가 이미 켜져 있으면(해당 카테고리 전체 포함 상태) 세부 유형을 선택하는
+                // 순간 상위는 끈다 — 상위 ON과 하위 ON이 동시에 표시되는 모순을 막는다.
+                activeCategories.delete(slug);
             }
             applyFilterState();
         }
